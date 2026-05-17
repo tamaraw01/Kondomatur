@@ -95,7 +95,26 @@ def _base_url() -> str:
     return ""
 
 
-def _page(title: str, body: str) -> HTMLResponse:
+def _page(title: str, body: str, chrome: bool = True) -> HTMLResponse:
+    chrome_html = """
+        <header class="topbar">
+          <a class="brand" href="/streamer">
+            <span class="brand-mark">KT</span>
+            <span>Kondomatur</span>
+          </a>
+          <div class="topbar-actions">
+            <nav>
+              <a href="/streamer">Panel</a>
+              <a href="/donate/streamer_001">Donasi</a>
+              <a href="/overlay/streamer_001">Overlay</a>
+            </nav>
+            <button class="theme-toggle" id="themeToggle" type="button">
+              <span class="theme-toggle-icon"></span>
+              <span id="themeToggleText">Dark</span>
+            </button>
+          </div>
+        </header>
+    """ if chrome else ""
     return HTMLResponse(
         f"""
         <!doctype html>
@@ -105,54 +124,194 @@ def _page(title: str, body: str) -> HTMLResponse:
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>{title}</title>
           <style>
-            :root {{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f4f7fb; }}
-            body {{ margin: 0; }}
-            body::before {{ content: ""; position: fixed; inset: 0 0 auto; height: 260px; background: linear-gradient(135deg, #0f766e 0%, #184e77 58%, #25324a 100%); z-index: -1; }}
-            main {{ width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0; }}
-            .panel {{ background: rgba(255,255,255,.98); border: 1px solid #d9e0ea; border-radius: 8px; padding: 22px; margin-bottom: 16px; box-shadow: 0 14px 34px rgba(23,32,51,.08); }}
-            .grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }}
-            .metrics {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }}
-            .metric {{ border: 1px solid #d9e0ea; border-radius: 8px; padding: 14px; background: #f8fafc; }}
-            .metric strong {{ font-size: 22px; }}
-            h1, h2, p {{ margin-top: 0; }}
-            h1 {{ font-size: 34px; }}
-            h2 {{ font-size: 18px; }}
-            label {{ display: grid; gap: 6px; margin-bottom: 12px; font-weight: 700; }}
-            input, textarea, select {{ width: 100%; border: 1px solid #c8d1df; border-radius: 6px; padding: 10px 11px; font: inherit; box-sizing: border-box; }}
-            button, .button {{ display: inline-flex; justify-content: center; align-items: center; border: 1px solid #0f766e; border-radius: 6px; padding: 10px 12px; background: #0f766e; color: white; font-weight: 800; text-decoration: none; cursor: pointer; }}
-            button.secondary {{ background: #f8fafc; color: #172033; border-color: #b9c4d3; }}
-            .status-row {{ display: flex; flex-wrap: wrap; gap: 8px; }}
-            .pill {{ border-radius: 999px; padding: 7px 10px; background: #dcfce7; color: #166534; font-weight: 800; font-size: 13px; }}
-            .muted {{ color: #5f6b7a; }}
-            .link-row {{ display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }}
-            .section-label {{ color: #0f766e; font-size: 12px; font-weight: 900; text-transform: uppercase; }}
-            table {{ width: 100%; border-collapse: collapse; }}
-            th, td {{ border-bottom: 1px solid #e5eaf1; padding: 10px; text-align: left; font-size: 14px; }}
-            th {{ background: #f8fafc; }}
-            pre {{ background: #111827; color: #e5edf7; border-radius: 6px; padding: 12px; overflow: auto; }}
-            .checkout-card {{ max-width: 720px; margin-inline: auto; }}
-            .checkout-summary {{ display: grid; gap: 14px; margin: 18px 0; padding: 18px; border: 1px solid #d9e0ea; border-radius: 8px; background: #f8fafc; }}
-            .checkout-summary strong {{ display: block; margin-top: 4px; color: #172033; font-size: 22px; }}
-            .summary-label {{ color: #657184; font-size: 12px; font-weight: 900; text-transform: uppercase; }}
-            .summary-message {{ padding-top: 12px; border-top: 1px solid #e5eaf1; }}
-            .summary-message p {{ margin: 6px 0 0; color: #344054; }}
+            :root {{
+              color-scheme: dark;
+              font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+              --bg: #06163f;
+              --bg-2: #092a72;
+              --surface: #071f56;
+              --surface-2: #0a2b70;
+              --surface-3: #0e3a8b;
+              --line: rgba(194, 223, 255, 0.20);
+              --line-strong: rgba(255, 255, 255, 0.32);
+              --text: #f8fbff;
+              --muted: #a7c1e8;
+              --muted-2: #7fa1d4;
+              --brand-blue: #0848c8;
+              --brand-blue-2: #0d65ff;
+              --cyan: #00d9ff;
+              --mint: #00e7a6;
+              --violet: #7357ff;
+              --magenta: #ff2e83;
+              --orange: #ff9a2e;
+              --lime: #baff3d;
+              --shadow: rgba(0, 8, 30, 0.36);
+              --glow: rgba(0, 217, 255, 0.24);
+            }}
+            :root[data-theme="light"] {{
+              color-scheme: light;
+              --bg: #eef6ff;
+              --bg-2: #dceeff;
+              --surface: #ffffff;
+              --surface-2: #edf5ff;
+              --surface-3: #ddecff;
+              --line: rgba(6, 22, 63, 0.14);
+              --line-strong: rgba(6, 22, 63, 0.24);
+              --text: #06163f;
+              --muted: #536c98;
+              --muted-2: #6c85ad;
+              --brand-blue: #0855d8;
+              --brand-blue-2: #0074ff;
+              --cyan: #00a8e8;
+              --mint: #00a878;
+              --violet: #6652ff;
+              --magenta: #e91e72;
+              --orange: #e87510;
+              --lime: #5cae00;
+              --shadow: rgba(8, 49, 120, 0.15);
+              --glow: rgba(0, 116, 255, 0.18);
+            }}
+            * {{ box-sizing: border-box; }}
+            body {{
+              min-height: 100vh;
+              margin: 0;
+              color: var(--text);
+              background:
+                linear-gradient(90deg, var(--cyan) 0 6px, transparent 6px),
+                linear-gradient(135deg, color-mix(in srgb, var(--brand-blue) 74%, #001236), var(--bg) 44%, var(--bg-2));
+            }}
+            body::before {{
+              content: "";
+              position: fixed;
+              inset: 0;
+              z-index: -1;
+              background:
+                linear-gradient(115deg, transparent 0 18%, color-mix(in srgb, var(--cyan) 20%, transparent) 18% 22%, transparent 22% 100%),
+                linear-gradient(64deg, transparent 0 58%, color-mix(in srgb, var(--magenta) 16%, transparent) 58% 62%, transparent 62% 100%),
+                linear-gradient(180deg, color-mix(in srgb, var(--bg) 88%, transparent), var(--bg));
+            }}
+            main {{ width: min(1184px, calc(100% - 32px)); margin: 0 auto; padding: 26px 0 48px; }}
+            .topbar {{ width: min(1184px, calc(100% - 32px)); margin: 0 auto; padding: 26px 0 8px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
+            .brand {{ display: inline-flex; align-items: center; gap: 11px; color: var(--text); font-weight: 950; text-decoration: none; }}
+            .brand-mark {{ display: inline-grid; place-items: center; width: 40px; height: 32px; border: 1px solid var(--line-strong); border-radius: 999px; background: linear-gradient(135deg, #ffffff 0%, var(--cyan) 28%, var(--brand-blue-2) 72%, var(--violet) 100%); color: #fff; box-shadow: 0 18px 42px var(--glow); }}
+            .topbar-actions {{ display: flex; align-items: center; gap: 10px; }}
+            nav {{ display: flex; gap: 4px; padding: 5px; border: 1px solid var(--line); border-radius: 999px; background: color-mix(in srgb, var(--surface) 84%, transparent); box-shadow: 0 16px 38px var(--shadow); }}
+            nav a {{ min-width: 78px; color: var(--muted); text-align: center; text-decoration: none; font-size: 13px; font-weight: 850; padding: 8px 12px; border-radius: 999px; }}
+            nav a:hover {{ color: var(--text); background: color-mix(in srgb, var(--surface-3) 74%, transparent); }}
+            .theme-toggle {{ min-width: 94px; display: inline-flex; justify-content: center; align-items: center; gap: 8px; border: 1px solid var(--line); border-radius: 999px; padding: 10px 12px; background: color-mix(in srgb, var(--surface) 86%, transparent); color: var(--text); box-shadow: 0 16px 38px var(--shadow); }}
+            .theme-toggle-icon {{ width: 14px; height: 14px; border: 2px solid var(--cyan); border-radius: 999px; box-shadow: inset 5px 0 0 var(--cyan); }}
+            .console-intro {{ display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 420px); gap: 20px; align-items: end; margin-bottom: 24px; }}
+            .console-intro h1 {{ margin: 0; font-size: 38px; line-height: 1.05; }}
+            .panel, .api-card, .glass-panel, .kpi-card, .activity-panel {{
+              position: relative;
+              overflow: hidden;
+              border: 1px solid var(--line);
+              border-radius: 8px;
+              background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 96%, white 4%), var(--surface));
+              box-shadow: 0 24px 70px var(--shadow);
+            }}
+            .panel::after, .api-card::after, .glass-panel::after, .kpi-card::after, .activity-panel::after {{ content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(122deg, rgba(255,255,255,.18), transparent 28% 100%); opacity: .22; }}
+            .panel, .api-card, .glass-panel {{ padding: 24px; }}
+            .panel {{ margin-bottom: 18px; }}
+            .compact-api {{ padding: 16px; }}
+            .compact-api label {{ margin-bottom: 0; }}
+            .eyebrow, .section-label {{ margin: 0 0 8px; color: var(--cyan); font-size: 12px; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }}
+            h1, h2, h3, p {{ margin-top: 0; }}
+            h1 {{ font-size: 38px; }}
+            h2 {{ margin-bottom: 12px; color: var(--text); font-size: 20px; }}
+            .muted, .hint {{ color: var(--muted); }}
+            label {{ display: grid; gap: 8px; margin-bottom: 12px; color: var(--text); font-size: 13px; font-weight: 850; }}
+            input, textarea, select {{ width: 100%; border: 1px solid var(--line); border-radius: 8px; padding: 12px 13px; font: inherit; background: color-mix(in srgb, var(--surface-2) 82%, #000 18%); color: var(--text); }}
+            :root[data-theme="light"] input, :root[data-theme="light"] textarea, :root[data-theme="light"] select {{ background: #fff; }}
+            input:focus, textarea:focus, select:focus {{ outline: 3px solid color-mix(in srgb, var(--cyan) 24%, transparent); border-color: var(--cyan); }}
+            button, .button {{ display: inline-flex; justify-content: center; align-items: center; border: 1px solid var(--line); border-radius: 8px; padding: 12px 15px; background: color-mix(in srgb, var(--surface-2) 86%, #000 14%); color: var(--text); font: inherit; font-weight: 900; text-decoration: none; cursor: pointer; }}
+            button.secondary {{ align-self: end; border-color: var(--line); background: color-mix(in srgb, var(--surface-3) 82%, #000 18%); color: var(--text); }}
+            .primary-button {{ width: 100%; border-color: var(--cyan); background: linear-gradient(135deg, var(--cyan), var(--brand-blue-2) 48%, var(--violet)); color: #fff; box-shadow: 0 16px 36px var(--glow); }}
+            .streamer-dashboard {{ display: grid; gap: 30px; }}
+            .kpi-grid {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }}
+            .kpi-card {{ min-height: 112px; display: grid; align-content: space-between; padding: 24px; }}
+            .kpi-card span {{ color: var(--muted); font-size: 13px; font-weight: 900; text-transform: uppercase; }}
+            .kpi-card strong {{ color: var(--cyan); font-size: 32px; line-height: 1; }}
+            .kpi-card small {{ color: var(--muted-2); font-size: 14px; }}
+            .accent-hot {{ color: var(--magenta) !important; }}
+            .pack-stripe {{ position: absolute; inset: auto 0 0; height: 5px; background: linear-gradient(90deg, var(--cyan), var(--brand-blue-2), var(--lime)); }}
+            .pack-stripe.hot {{ background: linear-gradient(90deg, var(--magenta), var(--orange)); }}
+            .pack-stripe.violet {{ background: linear-gradient(90deg, var(--violet), var(--cyan)); }}
+            .segmented-mode {{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--bg) 80%, #000 20%); }}
+            .mode-button {{ min-height: 38px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); font-size: 12px; text-transform: uppercase; box-shadow: none; }}
+            .mode-button.is-active {{ color: #fff; background: linear-gradient(135deg, var(--cyan), var(--brand-blue-2) 48%, var(--violet)); box-shadow: 0 12px 30px var(--glow), inset 0 1px 0 rgba(255,255,255,.26); }}
+            .premium-grid {{ display: grid; grid-template-columns: minmax(0, 1.34fr) minmax(320px, .66fr); gap: 24px; }}
+            .link-console, .status-console {{ display: grid; gap: 18px; }}
+            .link-stack {{ display: grid; gap: 12px; }}
+            .premium-link-row, .link-row {{ display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }}
+            .status-list, .status-row {{ display: flex; flex-wrap: wrap; gap: 9px; }}
+            .status-chip, .pill, .live-pill, .badge {{ display: inline-flex; align-items: center; width: fit-content; border-radius: 999px; font-size: 12px; font-weight: 900; }}
+            .status-chip, .pill {{ gap: 8px; padding: 9px 11px; border: 1px solid color-mix(in srgb, var(--mint) 28%, var(--line)); background: color-mix(in srgb, var(--mint) 12%, var(--surface)); color: var(--text); }}
+            .status-chip i, .live-pill i {{ width: 8px; height: 8px; border-radius: 999px; background: var(--mint); box-shadow: 0 0 16px color-mix(in srgb, var(--mint) 72%, transparent); }}
+            .mini-metrics, .metrics {{ display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }}
+            .mini-metrics div, .metric {{ min-height: 78px; display: grid; align-content: space-between; border: 1px solid var(--line); border-radius: 8px; padding: 14px; background: color-mix(in srgb, var(--surface-2) 86%, #000 14%); }}
+            .mini-metrics span, .metric span {{ color: var(--muted); font-size: 12px; font-weight: 850; }}
+            .mini-metrics strong, .metric strong {{ color: var(--text); font-size: 22px; }}
+            .activity-panel {{ position: relative; overflow: hidden; }}
+            .activity-header {{ min-height: 78px; display: flex; justify-content: space-between; align-items: center; gap: 18px; padding: 24px 32px; border-bottom: 1px solid var(--line); }}
+            .activity-title {{ display: inline-flex; align-items: center; gap: 14px; }}
+            .activity-title h2 {{ margin: 0; font-size: 20px; text-transform: uppercase; }}
+            .chevron-mark {{ color: var(--cyan); font-size: 36px; line-height: 1; }}
+            .live-pill {{ gap: 8px; padding: 8px 14px; border: 1px solid var(--line); background: color-mix(in srgb, var(--bg) 86%, #000 14%); color: var(--muted); text-transform: uppercase; }}
+            .activity-body {{ min-height: 236px; padding: 0; }}
+            .table-wrap {{ overflow-x: auto; }}
+            table {{ width: 100%; min-width: 760px; border-collapse: collapse; }}
+            th, td {{ border-bottom: 1px solid var(--line); padding: 15px 18px; text-align: left; font-size: 14px; }}
+            th {{ background: color-mix(in srgb, var(--surface-2) 92%, #000 8%); color: var(--muted); font-size: 11px; text-transform: uppercase; }}
+            td {{ color: var(--text); }}
+            .badge {{ padding: 6px 9px; border: 1px solid color-mix(in srgb, var(--cyan) 24%, var(--line)); background: color-mix(in srgb, var(--cyan) 10%, var(--surface)); color: var(--text); }}
+            .empty-cell {{ height: 236px; padding: 0; }}
+            .empty-state {{ min-height: 236px; display: grid; place-items: center; align-content: center; gap: 18px; color: var(--muted); }}
+            .empty-icon {{ display: inline-grid; place-items: center; width: 64px; height: 64px; border-radius: 999px; background: color-mix(in srgb, var(--surface-3) 70%, #000 30%); color: var(--cyan); font-size: 23px; font-weight: 900; }}
+            .version-mark {{ position: absolute; right: 16px; bottom: 14px; color: var(--muted-2); font-size: 11px; }}
+            pre {{ min-height: 120px; margin: 16px 0 0; overflow: auto; padding: 14px; border-radius: 8px; background: color-mix(in srgb, var(--bg) 88%, #000 12%); color: var(--text); white-space: pre-wrap; }}
+            .checkout-card, .form-card {{ max-width: 760px; margin-inline: auto; }}
+            .checkout-summary {{ display: grid; gap: 14px; margin: 18px 0; padding: 18px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 86%, #000 14%); }}
+            .checkout-summary strong {{ display: block; margin-top: 4px; color: var(--text); font-size: 22px; }}
+            .summary-label {{ color: var(--muted); font-size: 12px; font-weight: 900; text-transform: uppercase; }}
+            .summary-message {{ padding-top: 12px; border-top: 1px solid var(--line); }}
+            .summary-message p {{ margin: 6px 0 0; color: var(--muted); }}
             .public-result {{ margin-top: 16px; }}
-            .public-notice {{ display: grid; gap: 4px; padding: 14px 16px; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; color: #1d4ed8; }}
-            .public-notice strong {{ color: #1e3a8a; }}
-            .public-notice.success {{ border-color: #86efac; background: #f0fdf4; color: #166534; }}
-            .public-notice.success strong {{ color: #14532d; }}
-            .public-notice.danger {{ border-color: #fecaca; background: #fff1f2; color: #9f1239; }}
-            .public-notice.danger strong {{ color: #881337; }}
-            .segmented-mode {{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border: 1px solid #d9e0ea; border-radius: 8px; background: #f8fafc; }}
-            .mode-button {{ border-color: transparent; background: transparent; color: #5f6b7a; text-transform: uppercase; }}
-            .mode-button.is-active {{ border-color: #4b2df7; background: #4b2df7; color: #fff; box-shadow: 0 10px 24px rgba(75,45,247,.22); }}
-            .overlay-card {{ border: 1px solid #d7dde8; border-radius: 8px; padding: 28px; background: #fff; box-shadow: 0 12px 30px rgba(23, 37, 84, .12); }}
-            .amount {{ font-size: 32px; font-weight: 900; }}
-            .message {{ font-size: 24px; margin-top: 12px; color: #374151; }}
-            @media (max-width: 760px) {{ .grid, .metrics, .link-row {{ grid-template-columns: 1fr; }} }}
+            .public-notice {{ display: grid; gap: 4px; padding: 14px 16px; border: 1px solid var(--line); border-radius: 8px; background: color-mix(in srgb, var(--surface-2) 86%, #000 14%); color: var(--muted); }}
+            .public-notice strong {{ color: var(--text); }}
+            .public-notice.success {{ border-color: color-mix(in srgb, var(--mint) 44%, var(--line)); background: color-mix(in srgb, var(--mint) 12%, var(--surface)); }}
+            .public-notice.danger {{ border-color: color-mix(in srgb, var(--magenta) 48%, var(--line)); background: color-mix(in srgb, var(--magenta) 12%, var(--surface)); }}
+            .overlay-card {{ width: min(760px, calc(100% - 32px)); margin: 48px auto; display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 32px; background: var(--surface); box-shadow: 0 24px 70px var(--shadow); }}
+            .amount {{ color: var(--cyan); font-size: 32px; font-weight: 950; }}
+            .message {{ color: var(--muted); font-size: 22px; }}
+            @media (max-width: 980px) {{ .console-intro, .kpi-grid, .premium-grid, .mini-metrics, .metrics {{ grid-template-columns: 1fr; }} }}
+            @media (max-width: 720px) {{ main, .topbar {{ width: min(100% - 20px, 1184px); }} .topbar, .topbar-actions, nav, .premium-link-row, .link-row, .activity-header {{ display: grid; grid-template-columns: 1fr; }} nav {{ border-radius: 8px; }} .theme-toggle {{ width: 100%; }} .activity-header {{ align-items: start; padding: 20px; }} }}
           </style>
+          <script>
+            const storedTheme = localStorage.getItem("kondomatur_theme") || "dark";
+            document.documentElement.dataset.theme = storedTheme;
+          </script>
         </head>
-        <body>{body}</body>
+        <body>
+          {chrome_html}
+          {body}
+          <script>
+            const themeToggle = document.querySelector("#themeToggle");
+            const themeText = document.querySelector("#themeToggleText");
+            function syncThemeLabel() {{
+              if (themeText) themeText.textContent = document.documentElement.dataset.theme === "dark" ? "Dark" : "Light";
+            }}
+            syncThemeLabel();
+            if (themeToggle) {{
+              themeToggle.addEventListener("click", () => {{
+                const nextTheme = document.documentElement.dataset.theme === "dark" ? "light" : "dark";
+                document.documentElement.dataset.theme = nextTheme;
+                localStorage.setItem("kondomatur_theme", nextTheme);
+                syncThemeLabel();
+              }});
+            }}
+          </script>
+        </body>
         </html>
         """
     )
@@ -190,52 +349,116 @@ def streamer_panel() -> HTMLResponse:
         "Panel Streamer",
         f"""
         <main>
-          <section class="panel">
-            <h1>Panel Streamer</h1>
-            <p class="muted">Prototype AI-powered donation payment gateway. Pilih mode proteksi, salin link donasi, lalu pasang overlay di OBS.</p>
-            <div class="grid">
-              <label>Mode proteksi
+          <section class="console-intro">
+            <div>
+              <p class="eyebrow">Streamer control room</p>
+              <h1>Panel Streamer</h1>
+              <p class="muted">AI-powered donation payment gateway dengan moderasi otomatis, checkout sandbox, dan overlay OBS.</p>
+            </div>
+            <div class="api-card compact-api">
+              <span class="section-label">Backend</span>
+              <h2>Connected</h2>
+              <p class="muted">FastAPI berjalan di origin ini.</p>
+            </div>
+          </section>
+
+          <section class="streamer-dashboard">
+            <div class="kpi-grid">
+              <article class="kpi-card">
+                <div class="pack-stripe"></div>
+                <span>Total pendapatan</span>
+                <strong id="totalRevenue">Rp 0</strong>
+              </article>
+              <article class="kpi-card">
+                <div class="pack-stripe hot"></div>
+                <span>Donasi terfilter</span>
+                <strong id="filteredCount" class="accent-hot">0</strong>
+                <small>Event</small>
+              </article>
+              <article class="kpi-card">
+                <div class="pack-stripe violet"></div>
+                <span>Mode proteksi</span>
                 <div class="segmented-mode" role="group" aria-label="Mode proteksi">
                   <button class="mode-button {"is-active" if settings.get("filter_mode") == "sensor" else ""}" data-mode="sensor" type="button">Sensor</button>
                   <button class="mode-button {"is-active" if settings.get("filter_mode") == "block" else ""}" data-mode="block" type="button">Blokir</button>
                 </div>
-              </label>
-              <div>
-                <p class="muted">Status sistem</p>
-                <div class="status-row">
-                  <span class="pill">AI Moderation aktif</span>
-                  <span class="pill">Payment Sandbox aktif</span>
-                  <span class="pill">Overlay aktif</span>
+              </article>
+            </div>
+
+            <div class="premium-grid">
+              <section class="glass-panel link-console">
+                <div>
+                  <span class="section-label">Distribution</span>
+                  <h2>Link publik streamer</h2>
+                </div>
+                <div class="link-stack">
+                  <div class="premium-link-row">
+                    <label>Link donasi<input id="donateLink" readonly value="{donate_link}" /></label>
+                    <button class="secondary" id="copyDonate" type="button">Copy</button>
+                  </div>
+                  <div class="premium-link-row">
+                    <label>Link overlay OBS<input id="overlayLink" readonly value="{overlay_link}" /></label>
+                    <button class="secondary" id="copyOverlay" type="button">Copy</button>
+                  </div>
+                </div>
+              </section>
+
+              <section class="glass-panel status-console">
+                <span class="section-label">System status</span>
+                <h2>Payment gateway aktif</h2>
+                <div class="status-list">
+                  <span class="status-chip"><i></i>AI Moderation aktif</span>
+                  <span class="status-chip"><i></i>Payment Sandbox aktif</span>
+                  <span class="status-chip"><i></i>Overlay aktif</span>
+                </div>
+                <div class="mini-metrics">
+                  <div><span>Total</span><strong id="metricTotal">0</strong></div>
+                  <div><span>Aman</span><strong id="metricSafe">0</strong></div>
+                  <div><span>Sensor</span><strong id="metricMasked">0</strong></div>
+                  <div><span>Blokir</span><strong id="metricBlocked">0</strong></div>
+                </div>
+              </section>
+            </div>
+
+            <section class="activity-panel">
+              <header class="activity-header">
+                <div class="activity-title">
+                  <span class="chevron-mark">›</span>
+                  <h2>Log aktivitas donasi</h2>
+                </div>
+                <span class="live-pill"><i></i>Live monitoring</span>
+              </header>
+              <div class="activity-body">
+                <div class="table-wrap">
+                  <table>
+                    <thead><tr><th>Sender/display name</th><th>Amount</th><th>Label</th><th>Action</th><th>Payment</th><th>Overlay</th></tr></thead>
+                    <tbody id="latestRows">
+                      <tr>
+                        <td class="empty-cell" colspan="6">
+                          <div class="empty-state">
+                            <span class="empty-icon">i</span>
+                            <p>Memuat donasi terbaru...</p>
+                          </div>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
                 </div>
               </div>
-            </div>
-          </section>
-
-          <section class="panel grid">
-            <div class="link-row">
-              <label>Link donasi<input id="donateLink" readonly value="{donate_link}" /></label>
-              <button class="secondary" onclick="copyValue('donateLink')">Copy</button>
-            </div>
-            <div class="link-row">
-              <label>Link overlay OBS<input id="overlayLink" readonly value="{overlay_link}" /></label>
-              <button class="secondary" onclick="copyValue('overlayLink')">Copy</button>
-            </div>
-          </section>
-
-          <section class="panel">
-            <div class="metrics" id="metrics"></div>
-          </section>
-
-          <section class="panel">
-            <h2>Donasi terbaru</h2>
-            <table>
-              <thead><tr><th>Sender/display name</th><th>Amount</th><th>Label</th><th>Action</th><th>Payment</th><th>Overlay</th></tr></thead>
-              <tbody id="latestRows"><tr><td colspan="6">Memuat...</td></tr></tbody>
-            </table>
+              <span class="version-mark">kt-v1.0.0-alpha</span>
+            </section>
           </section>
         </main>
-          <script>
-            const streamerId = {streamer_id!r};
+        <script>
+          const streamerId = {streamer_id!r};
+          function escapeHtml(value) {{
+            return String(value ?? "")
+              .replaceAll("&", "&amp;")
+              .replaceAll("<", "&lt;")
+              .replaceAll(">", "&gt;")
+              .replaceAll('"', "&quot;")
+              .replaceAll("'", "&#039;");
+          }}
           document.querySelectorAll('.mode-button').forEach((button) => {{
             button.addEventListener('click', async () => {{
               const mode = button.dataset.mode;
@@ -250,8 +473,18 @@ def streamer_panel() -> HTMLResponse:
           function absolutePath(path) {{ return new URL(path, window.location.origin).toString(); }}
           document.querySelector('#donateLink').value = absolutePath('{donate_link}');
           document.querySelector('#overlayLink').value = absolutePath('{overlay_link}');
-          async function copyValue(id) {{ await navigator.clipboard.writeText(document.querySelector('#' + id).value); }}
+          function attachCopy(buttonId, inputId) {{
+            const button = document.querySelector('#' + buttonId);
+            button.addEventListener('click', async () => {{
+              await navigator.clipboard.writeText(document.querySelector('#' + inputId).value);
+              button.textContent = 'Copied';
+              setTimeout(() => button.textContent = 'Copy', 1200);
+            }});
+          }}
+          attachCopy('copyDonate', 'donateLink');
+          attachCopy('copyOverlay', 'overlayLink');
           function fmtAmount(value) {{ return 'IDR' + Number(value || 0).toLocaleString('id-ID'); }}
+          function fmtRupiah(value) {{ return fmtAmount(value).replace('IDR', 'Rp '); }}
           async function loadLatest() {{
             const res = await fetch('/api/moderation/logs?limit=20');
             const rows = await res.json();
@@ -259,19 +492,31 @@ def streamer_panel() -> HTMLResponse:
             const safe = rows.filter(r => r.action_label === 'allow').length;
             const masked = rows.filter(r => r.action_label === 'mask').length;
             const blocked = rows.filter(r => r.action_label === 'block').length;
+            const filtered = masked + blocked;
             const paid = rows.filter(r => r.payment_status === 'success').reduce((sum, r) => sum + Number(r.amount || 0), 0);
-            document.querySelector('#metrics').innerHTML = [
-              ['Total donasi', total], ['Total aman', safe], ['Total disensor', masked], ['Total diblokir', blocked], ['Nominal berhasil', fmtAmount(paid)]
-            ].map(([k,v]) => `<div class="metric"><strong>${{v}}</strong><br><span class="muted">${{k}}</span></div>`).join('');
+            document.querySelector('#totalRevenue').textContent = fmtRupiah(paid);
+            document.querySelector('#filteredCount').textContent = filtered;
+            document.querySelector('#metricTotal').textContent = total;
+            document.querySelector('#metricSafe').textContent = safe;
+            document.querySelector('#metricMasked').textContent = masked;
+            document.querySelector('#metricBlocked').textContent = blocked;
             document.querySelector('#latestRows').innerHTML = rows.length ? rows.map(r => `
               <tr>
-                <td>${{r.display_sender_name || r.sender_name_raw || '-'}}</td>
+                <td>${{escapeHtml(r.display_sender_name || r.sender_name_raw || '-')}}</td>
                 <td>${{fmtAmount(r.amount)}}</td>
-                <td>${{r.label_multiclass}}</td>
-                <td>${{r.action_label}}</td>
-                <td>${{r.payment_status}}</td>
-                <td>${{Number(r.overlay_displayed) ? 'visible' : 'hidden'}}</td>
-              </tr>`).join('') : '<tr><td colspan="6">Belum ada donasi.</td></tr>';
+                <td><span class="badge">${{escapeHtml(r.label_multiclass)}}</span></td>
+                <td><span class="badge">${{escapeHtml(r.action_label)}}</span></td>
+                <td><span class="badge">${{escapeHtml(r.payment_status)}}</span></td>
+                <td><span class="badge">${{Number(r.overlay_displayed) ? 'visible' : 'hidden'}}</span></td>
+              </tr>`).join('') : `
+                <tr>
+                  <td class="empty-cell" colspan="6">
+                    <div class="empty-state">
+                      <span class="empty-icon">i</span>
+                      <p>Belum ada donasi yang masuk.</p>
+                    </div>
+                  </td>
+                </tr>`;
           }}
           loadLatest();
         </script>
@@ -294,9 +539,9 @@ def donate_page(streamer_id: str) -> HTMLResponse:
               <label>Email<input name="sender_email_raw" value="budi@example.com" /></label>
               <label>Nominal<input name="amount" type="number" min="0" value="25000" /></label>
               <label>Pesan<textarea name="message_raw" rows="4">Semangat bang, lanjut mainnya!</textarea></label>
-              <button type="submit">Lanjut ke Checkout</button>
+              <button class="primary-button" type="submit">Lanjut ke Checkout</button>
             </form>
-            <pre id="result"></pre>
+            <div id="result" class="public-result" aria-live="polite"></div>
           </section>
         </main>
         <script>
@@ -318,7 +563,7 @@ def donate_page(streamer_id: str) -> HTMLResponse:
               window.location.href = data.checkout_url;
               return;
             }}
-            result.textContent = data.donor_message || JSON.stringify(data, null, 2);
+            result.innerHTML = '<div class="public-notice danger"><strong>Donasi gagal diproses</strong><span>' + (data.donor_message || 'Pesan terindikasi melanggar kebijakan sehingga pembayaran tidak dilanjutkan.') + '</span></div>';
           }});
         </script>
         """,
@@ -376,7 +621,7 @@ def checkout_page(payment_intent_id: str) -> HTMLResponse:
                 <p>{message}</p>
               </div>
             </div>
-            <button id="payButton" {button_disabled}>Bayar Sandbox</button>
+            <button class="primary-button" id="payButton" {button_disabled}>Bayar Sandbox</button>
             <div id="result" class="public-result" aria-live="polite">{initial_notice}</div>
           </section>
         </main>
@@ -429,6 +674,7 @@ def obs_overlay_page(streamer_id: str) -> HTMLResponse:
           setInterval(loadOverlay, 3000);
         </script>
         """,
+        chrome=False,
     )
 
 
