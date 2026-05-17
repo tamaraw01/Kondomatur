@@ -30,15 +30,29 @@ function copyText(value) {
 
 function layout(title, content) {
   app.innerHTML = `
-    <section class="panel hero">
+    <header class="topbar">
+      <a class="brand" href="/streamer">
+        <span class="brand-mark">KD</span>
+        <span>KondomDonatur</span>
+      </a>
+      <nav>
+        <a href="/streamer">Panel</a>
+        <a href="/donate/${DEFAULT_STREAMER_ID}">Donasi</a>
+        <a href="/overlay/${DEFAULT_STREAMER_ID}">Overlay</a>
+      </nav>
+    </header>
+    <section class="hero">
       <div>
-        <p class="eyebrow">KondomDonatur</p>
+        <p class="eyebrow">Payment gateway sandbox</p>
         <h1>${title}</h1>
-        <p class="copy">Prototype AI-powered donation payment gateway untuk streamer.</p>
+        <p class="copy">AI moderation, payment sandbox, dan overlay OBS dalam satu alur sederhana untuk demo streamer.</p>
       </div>
-      <label class="api-box">Backend API URL
-        <input id="apiUrl" value="${apiBaseUrl()}" />
-      </label>
+      <div class="api-card">
+        <label>Backend API URL
+          <input id="apiUrl" value="${apiBaseUrl()}" />
+        </label>
+        <span class="hint">Gunakan URL Render/Railway saat demo online.</span>
+      </div>
     </section>
     ${content}
   `;
@@ -52,15 +66,23 @@ async function renderStreamer() {
   layout(
     "Panel Streamer",
     `
-    <section class="panel grid">
+    <section class="panel control-panel">
+      <div>
+        <span class="section-label">Proteksi live</span>
+        <h2>Mode moderasi</h2>
+        <p class="muted">Sensor menjaga donasi tetap masuk dan menyamarkan overlay. Blokir menolak payment intent ketika judol terdeteksi.</p>
+      </div>
       <label>Mode proteksi
         <select id="mode">
           <option value="sensor">Mode Sensor</option>
           <option value="block">Mode Blokir</option>
         </select>
       </label>
+    </section>
+    <section class="panel">
       <div>
-        <h2>Status sistem</h2>
+        <span class="section-label">Kesiapan sistem</span>
+        <h2>Status operasional</h2>
         <div class="status-row">
           <span class="pill">AI Moderation aktif</span>
           <span class="pill">Payment Sandbox aktif</span>
@@ -68,7 +90,7 @@ async function renderStreamer() {
         </div>
       </div>
     </section>
-    <section class="panel grid">
+    <section class="panel link-panel">
       <div class="link-row">
         <label>Link donasi<input id="donateLink" readonly /></label>
         <button class="secondary" id="copyDonate">Copy</button>
@@ -79,14 +101,18 @@ async function renderStreamer() {
       </div>
     </section>
     <section class="panel">
+      <span class="section-label">Ringkasan</span>
       <div class="metrics" id="metrics"></div>
     </section>
     <section class="panel">
+      <span class="section-label">Monitoring</span>
       <h2>Donasi terbaru</h2>
-      <table>
-        <thead><tr><th>Sender/display name</th><th>Amount</th><th>Label</th><th>Action</th><th>Payment</th><th>Overlay</th></tr></thead>
-        <tbody id="latestRows"><tr><td colspan="6">Memuat...</td></tr></tbody>
-      </table>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Sender/display name</th><th>Amount</th><th>Label</th><th>Action</th><th>Payment</th><th>Overlay</th></tr></thead>
+          <tbody id="latestRows"><tr><td colspan="6">Memuat...</td></tr></tbody>
+        </table>
+      </div>
     </section>
     `,
   );
@@ -120,16 +146,16 @@ async function renderStreamer() {
     ["Total disensor", masked],
     ["Total diblokir", blocked],
     ["Nominal berhasil", money(paid)],
-  ].map(([label, value]) => `<div class="metric"><strong>${value}</strong><br><span>${label}</span></div>`).join("");
+  ].map(([label, value]) => `<div class="metric"><span>${label}</span><strong>${value}</strong></div>`).join("");
   document.querySelector("#latestRows").innerHTML = logs.length
     ? logs.map((row) => `
       <tr>
         <td>${row.display_sender_name || row.sender_name_raw || "-"}</td>
         <td>${money(row.amount)}</td>
-        <td>${row.label_multiclass}</td>
-        <td>${row.action_label}</td>
-        <td>${row.payment_status}</td>
-        <td>${Number(row.overlay_displayed) ? "visible" : "hidden"}</td>
+        <td><span class="badge">${row.label_multiclass}</span></td>
+        <td><span class="badge">${row.action_label}</span></td>
+        <td><span class="badge">${row.payment_status}</span></td>
+        <td><span class="badge">${Number(row.overlay_displayed) ? "visible" : "hidden"}</span></td>
       </tr>
     `).join("")
     : `<tr><td colspan="6">Belum ada donasi.</td></tr>`;
@@ -139,14 +165,15 @@ function renderDonate(streamerId = DEFAULT_STREAMER_ID) {
   layout(
     "Kirim Donasi",
     `
-    <section class="panel">
+    <section class="panel form-card">
+      <span class="section-label">Donasi penonton</span>
       <form id="donateForm">
         <input type="hidden" name="streamer_id" value="${streamerId}" />
         <label>Nama pengirim<input name="sender_name_raw" value="Budi" required /></label>
         <label>Email<input name="sender_email_raw" value="budi@example.com" /></label>
         <label>Nominal<input name="amount" type="number" value="25000" min="0" /></label>
         <label>Pesan<textarea name="message_raw" rows="4">Semangat bang, lanjut mainnya!</textarea></label>
-        <button type="submit">Lanjut ke Checkout</button>
+        <button class="primary" type="submit">Lanjut ke Checkout</button>
       </form>
       <pre id="result"></pre>
     </section>
@@ -175,9 +202,10 @@ async function renderCheckout(paymentIntentId) {
   layout(
     "Checkout Sandbox",
     `
-    <section class="panel">
+    <section class="panel checkout-card">
+      <span class="section-label">Payment sandbox</span>
       <p>Payment intent: <strong>${paymentIntentId}</strong></p>
-      <button id="payButton">Bayar Sekarang</button>
+      <button class="primary" id="payButton">Bayar Sekarang</button>
       <pre id="result">Klik bayar untuk menyelesaikan payment sandbox.</pre>
     </section>
     `,
@@ -222,4 +250,3 @@ async function main() {
 }
 
 main();
-

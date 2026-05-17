@@ -8,6 +8,52 @@ from src.config import SAMPLE_DATA_PATH, ensure_project_dirs
 from src.feature_engineering import build_text_for_model
 
 
+SAMPLES_PER_CLASS = 300
+EMOJI_WRAPPERS = [
+    ("", ""),
+    ("😺🐳 ", " 🐻🐼"),
+    ("✨ ", " ✨"),
+    ("[", "]"),
+    ("๑۞๑ ", " ๑۞๑"),
+]
+CONFUSABLE_VARIANTS = {
+    "a": ["ⓐ", "Ⓐ", "Δ", "𝔸", "ａ"],
+    "b": ["🅱", "๒", "Ⓑ", "ｂ"],
+    "c": ["ς", "Ⓒ", "ｃ"],
+    "d": ["ᗪ", "Ⓓ", "ｄ"],
+    "e": ["ᵉ", "ⓔ", "Ｅ", "𝑒"],
+    "g": ["Ⓖ", "ɢ", "ｇ"],
+    "h": ["Ħ", "Ⓗ", "ｈ"],
+    "i": ["Ɨ", "Ⓘ", "Ｉ", "𝓲"],
+    "j": ["Ⓙ", "ｊ"],
+    "k": ["к", "Ⓚ", "Ｋ"],
+    "l": ["🅻", "ⓛ", "ｌ"],
+    "m": ["ⓜ", "Ｍ", "𝓶"],
+    "n": ["η", "几", "Ⓝ", "ｎ"],
+    "o": ["ㄖ", "🅾", "ⓞ", "Ｏ"],
+    "p": ["ᵖ", "🅿", "Ⓟ", "ｐ"],
+    "r": ["Ř", "Ⓡ", "ｒ"],
+    "s": ["🆂", "ⓢ", "５", "ｓ"],
+    "t": ["𝓽", "🆃", "７", "ｔ"],
+    "u": ["ⓤ", "Ｕ"],
+    "v": ["ᐯ", "Ⓥ"],
+    "w": ["ⓦ", "Ｗ"],
+    "x": ["χ", "Ⓧ"],
+    "y": ["𝐘", "Ⓨ"],
+    "z": ["Ⓩ", "ｚ"],
+    "0": ["⓪", "０"],
+    "1": ["①", "１"],
+    "2": ["②", "２"],
+    "3": ["③", "３"],
+    "4": ["④", "４"],
+    "5": ["⑤", "５"],
+    "6": ["⑥", "６"],
+    "7": ["➆", "⑦", "７"],
+    "8": ["➇", "❽", "８"],
+    "9": ["⑨", "９"],
+}
+
+
 BENIGN_MESSAGES = [
     "Semangat bang",
     "Semangat bang 😺🐳",
@@ -71,6 +117,10 @@ EXPLICIT_MESSAGES = [
     "s.l.o.t g.a.c.o.r r.t.p 99%",
     "😺🐳 ᵖㄖｌⓐ tＥŘ๒ΔƗк ĦⒶ几𝐘𝔸 ᗪⒾ ηᵉ𝓽➇８❽ 🐻🐼",
     "ᵖㄖｌⓐ terbaik hanya di ηᵉ𝓽➇８❽",
+    "vip777 bocoran admin hari ini",
+    "play88 pola terbaik malam ini",
+    "bet777 auto wd",
+    "game88 bonus deposit",
 ]
 
 SENDER_NAMES = [
@@ -85,6 +135,86 @@ SENDER_NAMES = [
     "PromoAkun",
     "max88team",
 ]
+
+
+def fullwidth_text(text: str) -> str:
+    output = []
+    for char in text:
+        if char == " ":
+            output.append(char)
+        elif 33 <= ord(char) <= 126:
+            output.append(chr(ord(char) + 0xFEE0))
+        else:
+            output.append(char)
+    return "".join(output)
+
+
+def separator_text(text: str, separator: str) -> str:
+    words = []
+    for word in text.split():
+        if len(word) >= 3 and word.isascii() and word.replace("%", "").isalnum():
+            words.append(separator.join(word))
+        else:
+            words.append(word)
+    return " ".join(words)
+
+
+def confusable_text(text: str, offset: int = 0) -> str:
+    output = []
+    for index, char in enumerate(text):
+        variants = CONFUSABLE_VARIANTS.get(char.lower())
+        if not variants:
+            output.append(char)
+            continue
+        if char.isupper() and char.lower() not in {"x"}:
+            replacement = variants[(index + offset) % len(variants)]
+        else:
+            replacement = variants[(index + offset) % len(variants)]
+        output.append(replacement)
+    return "".join(output)
+
+
+def symbol_noise_text(text: str, offset: int = 0) -> str:
+    separators = ["·", "•", "_", "~", "|"]
+    separator = separators[offset % len(separators)]
+    return separator_text(text, separator)
+
+
+def wrap_message(text: str, index: int) -> str:
+    prefix, suffix = EMOJI_WRAPPERS[index % len(EMOJI_WRAPPERS)]
+    return f"{prefix}{text}{suffix}"
+
+
+def mutate_message(label: str, message: str, index: int) -> str:
+    if label == "benign":
+        variants = [
+            message,
+            wrap_message(message, index),
+            message.upper() if index % 7 == 0 else message,
+            f"{message}!!" if index % 5 == 0 else message,
+        ]
+        return variants[index % len(variants)]
+
+    if label == "spam_non_judol":
+        variants = [
+            message,
+            fullwidth_text(message) if index % 5 == 0 else message,
+            wrap_message(message, index) if index % 4 == 0 else message,
+        ]
+        return variants[index % len(variants)]
+
+    variants = [
+        message,
+        fullwidth_text(message),
+        separator_text(message, " "),
+        separator_text(message, "."),
+        separator_text(message, "-"),
+        symbol_noise_text(message, index),
+        confusable_text(message, index),
+        wrap_message(confusable_text(message, index), index),
+        wrap_message(symbol_noise_text(message, index), index),
+    ]
+    return variants[index % len(variants)]
 
 
 def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
@@ -102,8 +232,8 @@ def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
     sender_cycle = cycle(SENDER_NAMES)
 
     for label, messages in groups:
-        for index in range(50):
-            message = messages[index % len(messages)]
+        for index in range(SAMPLES_PER_CLASS):
+            message = mutate_message(label, messages[index % len(messages)], index)
             sender = next(sender_cycle)
             if label == "benign":
                 sender = ["Budi", "Ayu", "Raka", "Nina", "ViewerBaik"][index % 5]

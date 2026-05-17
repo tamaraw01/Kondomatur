@@ -78,6 +78,8 @@ Script ini akan membuat `data/sample/donation_sample.csv` jika belum ada, melati
 models/judol_detector.pkl
 ```
 
+Dataset sintetis dibuat seimbang untuk 4 kelas dengan sekitar 1.200 baris, termasuk variasi fancy Unicode, huruf hias, confusable lintas script, angka hias, pemisah simbol, dan emoji wrapper yang aman.
+
 ## Jalankan API
 
 ```bash

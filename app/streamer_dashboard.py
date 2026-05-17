@@ -22,6 +22,29 @@ def api_post(path: str, payload: dict):
 
 
 st.set_page_config(page_title="KondomDonatur - Panel Streamer", page_icon="KD", layout="wide")
+st.markdown(
+    """
+    <style>
+    .block-container { padding-top: 2rem; max-width: 1180px; }
+    [data-testid="stMetric"] {
+        background: #f8fafc;
+        border: 1px solid #d9e0ea;
+        border-radius: 8px;
+        padding: 14px;
+    }
+    div[data-testid="stAlert"] {
+        border-radius: 8px;
+    }
+    .kd-card {
+        border: 1px solid #d9e0ea;
+        border-radius: 8px;
+        padding: 16px;
+        background: #ffffff;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Panel Streamer")
 st.caption("AI-powered donation payment gateway prototype untuk streamer.")
 

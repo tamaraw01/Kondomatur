@@ -104,15 +104,17 @@ def _page(title: str, body: str) -> HTMLResponse:
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>{title}</title>
           <style>
-            :root {{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #eef2f7; }}
+            :root {{ font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #172033; background: #f4f7fb; }}
             body {{ margin: 0; }}
-            main {{ width: min(980px, calc(100% - 32px)); margin: 0 auto; padding: 28px 0; }}
-            .panel {{ background: #fff; border: 1px solid #d9e0ea; border-radius: 8px; padding: 20px; margin-bottom: 16px; }}
+            body::before {{ content: ""; position: fixed; inset: 0 0 auto; height: 260px; background: linear-gradient(135deg, #0f766e 0%, #184e77 58%, #25324a 100%); z-index: -1; }}
+            main {{ width: min(1080px, calc(100% - 32px)); margin: 0 auto; padding: 32px 0; }}
+            .panel {{ background: rgba(255,255,255,.98); border: 1px solid #d9e0ea; border-radius: 8px; padding: 22px; margin-bottom: 16px; box-shadow: 0 14px 34px rgba(23,32,51,.08); }}
             .grid {{ display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }}
             .metrics {{ display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }}
-            .metric {{ border: 1px solid #d9e0ea; border-radius: 8px; padding: 12px; background: #f8fafc; }}
+            .metric {{ border: 1px solid #d9e0ea; border-radius: 8px; padding: 14px; background: #f8fafc; }}
+            .metric strong {{ font-size: 22px; }}
             h1, h2, p {{ margin-top: 0; }}
-            h1 {{ font-size: 30px; }}
+            h1 {{ font-size: 34px; }}
             h2 {{ font-size: 18px; }}
             label {{ display: grid; gap: 6px; margin-bottom: 12px; font-weight: 700; }}
             input, textarea, select {{ width: 100%; border: 1px solid #c8d1df; border-radius: 6px; padding: 10px 11px; font: inherit; box-sizing: border-box; }}
@@ -122,6 +124,7 @@ def _page(title: str, body: str) -> HTMLResponse:
             .pill {{ border-radius: 999px; padding: 7px 10px; background: #dcfce7; color: #166534; font-weight: 800; font-size: 13px; }}
             .muted {{ color: #5f6b7a; }}
             .link-row {{ display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: end; }}
+            .section-label {{ color: #0f766e; font-size: 12px; font-weight: 900; text-transform: uppercase; }}
             table {{ width: 100%; border-collapse: collapse; }}
             th, td {{ border-bottom: 1px solid #e5eaf1; padding: 10px; text-align: left; font-size: 14px; }}
             th {{ background: #f8fafc; }}
