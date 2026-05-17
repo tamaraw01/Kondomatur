@@ -1,4 +1,5 @@
 from datetime import datetime, timezone
+from html import escape
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
@@ -129,6 +130,19 @@ def _page(title: str, body: str) -> HTMLResponse:
             th, td {{ border-bottom: 1px solid #e5eaf1; padding: 10px; text-align: left; font-size: 14px; }}
             th {{ background: #f8fafc; }}
             pre {{ background: #111827; color: #e5edf7; border-radius: 6px; padding: 12px; overflow: auto; }}
+            .checkout-card {{ max-width: 720px; margin-inline: auto; }}
+            .checkout-summary {{ display: grid; gap: 14px; margin: 18px 0; padding: 18px; border: 1px solid #d9e0ea; border-radius: 8px; background: #f8fafc; }}
+            .checkout-summary strong {{ display: block; margin-top: 4px; color: #172033; font-size: 22px; }}
+            .summary-label {{ color: #657184; font-size: 12px; font-weight: 900; text-transform: uppercase; }}
+            .summary-message {{ padding-top: 12px; border-top: 1px solid #e5eaf1; }}
+            .summary-message p {{ margin: 6px 0 0; color: #344054; }}
+            .public-result {{ margin-top: 16px; }}
+            .public-notice {{ display: grid; gap: 4px; padding: 14px 16px; border: 1px solid #bfdbfe; border-radius: 8px; background: #eff6ff; color: #1d4ed8; }}
+            .public-notice strong {{ color: #1e3a8a; }}
+            .public-notice.success {{ border-color: #86efac; background: #f0fdf4; color: #166534; }}
+            .public-notice.success strong {{ color: #14532d; }}
+            .public-notice.danger {{ border-color: #fecaca; background: #fff1f2; color: #9f1239; }}
+            .public-notice.danger strong {{ color: #881337; }}
             .overlay-card {{ border: 1px solid #d7dde8; border-radius: 8px; padding: 28px; background: #fff; box-shadow: 0 12px 30px rgba(23, 37, 84, .12); }}
             .amount {{ font-size: 32px; font-weight: 900; }}
             .message {{ font-size: 24px; margin-top: 12px; color: #374151; }}
@@ -139,6 +153,28 @@ def _page(title: str, body: str) -> HTMLResponse:
         </html>
         """
     )
+
+
+def _fetch_checkout_public_detail(payment_intent_id: str) -> dict[str, Any]:
+    with db_connection() as conn:
+        detail = fetch_one(
+            conn,
+            """
+            SELECT dr.amount, dr.sender_name_raw, dr.message_raw, mr.payment_status
+            FROM donations_raw dr
+            JOIN moderation_results mr ON mr.donation_id = dr.donation_id
+            WHERE dr.donation_id = :payment_intent_id
+            """,
+            {"payment_intent_id": payment_intent_id},
+        )
+    if not detail:
+        raise HTTPException(status_code=404, detail="payment_intent_id tidak ditemukan")
+    return {
+        "amount": detail.get("amount") or 0,
+        "sender_name": detail.get("sender_name_raw") or "-",
+        "message": detail.get("message_raw") or "-",
+        "payment_status": detail.get("payment_status") or "pending",
+    }
 
 
 @app.get("/streamer", response_class=HTMLResponse)
@@ -285,37 +321,75 @@ def donate_page(streamer_id: str) -> HTMLResponse:
 
 @app.get("/checkout/{payment_intent_id}", response_class=HTMLResponse)
 def checkout_page(payment_intent_id: str) -> HTMLResponse:
-    with db_connection() as conn:
-        detail = fetch_one(
-            conn,
-            """
-            SELECT dr.amount, dr.sender_name_raw, dr.message_raw, mr.payment_status, mr.action_label
-            FROM donations_raw dr
-            JOIN moderation_results mr ON mr.donation_id = dr.donation_id
-            WHERE dr.donation_id = :payment_intent_id
-            """,
-            {"payment_intent_id": payment_intent_id},
-        )
-    if not detail:
-        raise HTTPException(status_code=404, detail="payment_intent_id tidak ditemukan")
+    detail = _fetch_checkout_public_detail(payment_intent_id)
+    amount = f"IDR{int(detail.get('amount') or 0):,}".replace(",", ".")
+    sender_name = escape(detail.get("sender_name") or "-")
+    message = escape(detail.get("message") or "-")
+    payment_status = detail.get("payment_status")
+    initial_notice = """
+            <div class="public-notice">
+              <strong>Siap diproses</strong>
+              <span>Klik tombol bayar untuk menyelesaikan checkout sandbox.</span>
+            </div>
+    """
+    button_disabled = ""
+    if payment_status == "success":
+        button_disabled = "disabled"
+        initial_notice = """
+            <div class="public-notice success">
+              <strong>Pembayaran sudah berhasil</strong>
+              <span>Terima kasih, donasimu sudah diproses untuk streamer.</span>
+            </div>
+        """
+    elif payment_status == "rejected":
+        button_disabled = "disabled"
+        initial_notice = """
+            <div class="public-notice danger">
+              <strong>Donasi gagal diproses</strong>
+              <span>Pesan terindikasi melanggar kebijakan sehingga pembayaran tidak dilanjutkan.</span>
+            </div>
+        """
     return _page(
         "Checkout Sandbox",
         f"""
         <main>
-          <section class="panel">
+          <section class="panel checkout-card">
             <h1>Checkout Sandbox</h1>
-            <p class="muted">Payment intent: <strong>{payment_intent_id}</strong></p>
-            <p><strong>IDR{int(detail.get("amount") or 0):,}</strong> dari {detail.get("sender_name_raw") or "-"}</p>
-            <p>{detail.get("message_raw") or ""}</p>
-            <button id="payButton">Bayar Sekarang</button>
-            <pre id="result">payment_status: {detail.get("payment_status")}</pre>
+            <p class="muted">Selesaikan pembayaran simulasi untuk mengirim donasi ke streamer.</p>
+            <div class="checkout-summary">
+              <div>
+                <span class="summary-label">Nominal</span>
+                <strong>{amount}</strong>
+              </div>
+              <div>
+                <span class="summary-label">Pengirim</span>
+                <strong>{sender_name}</strong>
+              </div>
+              <div class="summary-message">
+                <span class="summary-label">Pesan</span>
+                <p>{message}</p>
+              </div>
+            </div>
+            <button id="payButton" {button_disabled}>Bayar Sandbox</button>
+            <div id="result" class="public-result" aria-live="polite">{initial_notice}</div>
           </section>
         </main>
         <script>
           document.querySelector('#payButton').addEventListener('click', async () => {{
+            const button = document.querySelector('#payButton');
+            const result = document.querySelector('#result');
+            button.disabled = true;
+            button.textContent = 'Memproses...';
+            result.innerHTML = '<div class="public-notice"><strong>Memproses pembayaran</strong><span>Mohon tunggu sebentar.</span></div>';
             const res = await fetch('/api/checkout/{payment_intent_id}/pay', {{ method: 'POST' }});
             const data = await res.json();
-            document.querySelector('#result').textContent = JSON.stringify(data, null, 2);
+            if (data.payment_status === 'success') {{
+              result.innerHTML = '<div class="public-notice success"><strong>Pembayaran berhasil</strong><span>Terima kasih, donasimu sudah diproses untuk streamer.</span></div>';
+            }} else {{
+              result.innerHTML = '<div class="public-notice danger"><strong>Donasi gagal diproses</strong><span>' + (data.message || 'Pesan terindikasi melanggar kebijakan sehingga pembayaran tidak dilanjutkan.') + '</span></div>';
+              button.disabled = false;
+            }}
+            button.textContent = 'Bayar Sandbox';
           }});
         </script>
         """,
@@ -520,6 +594,12 @@ def create_payment_intent(payload: PaymentIntentRequest) -> dict[str, Any]:
         "checkout_url": f"/checkout/{payment_intent_id}",
         "overlay_status": "hidden",
     }
+
+
+@app.get("/api/checkout/{payment_intent_id}")
+def checkout_public_detail(payment_intent_id: str) -> dict[str, Any]:
+    init_db()
+    return _fetch_checkout_public_detail(payment_intent_id)
 
 
 @app.post("/api/checkout/{payment_intent_id}/pay")

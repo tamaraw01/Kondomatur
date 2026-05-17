@@ -13,6 +13,24 @@ function money(value) {
   return `IDR${Number(value || 0).toLocaleString("id-ID")}`;
 }
 
+function escapeHTML(value) {
+  return String(value ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#039;");
+}
+
+function publicNotice(kind, title, message) {
+  return `
+    <div class="public-notice ${kind}">
+      <strong>${escapeHTML(title)}</strong>
+      <span>${escapeHTML(message)}</span>
+    </div>
+  `;
+}
+
 async function api(path, options = {}) {
   const response = await fetch(`${apiBaseUrl()}${path}`, options);
   const data = await response.json();
@@ -150,11 +168,11 @@ async function renderStreamer() {
   document.querySelector("#latestRows").innerHTML = logs.length
     ? logs.map((row) => `
       <tr>
-        <td>${row.display_sender_name || row.sender_name_raw || "-"}</td>
+        <td>${escapeHTML(row.display_sender_name || row.sender_name_raw || "-")}</td>
         <td>${money(row.amount)}</td>
-        <td><span class="badge">${row.label_multiclass}</span></td>
-        <td><span class="badge">${row.action_label}</span></td>
-        <td><span class="badge">${row.payment_status}</span></td>
+        <td><span class="badge">${escapeHTML(row.label_multiclass)}</span></td>
+        <td><span class="badge">${escapeHTML(row.action_label)}</span></td>
+        <td><span class="badge">${escapeHTML(row.payment_status)}</span></td>
         <td><span class="badge">${Number(row.overlay_displayed) ? "visible" : "hidden"}</span></td>
       </tr>
     `).join("")
@@ -175,7 +193,7 @@ function renderDonate(streamerId = DEFAULT_STREAMER_ID) {
         <label>Pesan<textarea name="message_raw" rows="4">Semangat bang, lanjut mainnya!</textarea></label>
         <button class="primary" type="submit">Lanjut ke Checkout</button>
       </form>
-      <pre id="result"></pre>
+      <div id="result" class="public-result" aria-live="polite"></div>
     </section>
     `,
   );
@@ -194,7 +212,11 @@ function renderDonate(streamerId = DEFAULT_STREAMER_ID) {
       window.location.href = data.checkout_url;
       return;
     }
-    document.querySelector("#result").textContent = data.donor_message || JSON.stringify(data, null, 2);
+    document.querySelector("#result").innerHTML = publicNotice(
+      "danger",
+      "Donasi gagal diproses",
+      data.donor_message || "Pesan terindikasi melanggar kebijakan sehingga pembayaran tidak dilanjutkan.",
+    );
   });
 }
 
@@ -204,15 +226,84 @@ async function renderCheckout(paymentIntentId) {
     `
     <section class="panel checkout-card">
       <span class="section-label">Payment sandbox</span>
-      <p>Payment intent: <strong>${paymentIntentId}</strong></p>
-      <button class="primary" id="payButton">Bayar Sekarang</button>
-      <pre id="result">Klik bayar untuk menyelesaikan payment sandbox.</pre>
+      <h2>Ringkasan Donasi</h2>
+      <div id="checkoutSummary" class="checkout-summary">
+        <span class="skeleton-line"></span>
+        <span class="skeleton-line short"></span>
+      </div>
+      <button class="primary" id="payButton">Bayar Sandbox</button>
+      <div id="result" class="public-result" aria-live="polite">
+        ${publicNotice("info", "Siap diproses", "Klik tombol bayar untuk menyelesaikan checkout sandbox.")}
+      </div>
     </section>
     `,
   );
-  document.querySelector("#payButton").addEventListener("click", async () => {
-    const data = await api(`/api/checkout/${paymentIntentId}/pay`, { method: "POST" });
-    document.querySelector("#result").textContent = JSON.stringify(data, null, 2);
+  const payButton = document.querySelector("#payButton");
+  const resultEl = document.querySelector("#result");
+  const summaryEl = document.querySelector("#checkoutSummary");
+
+  try {
+    const detail = await api(`/api/checkout/${paymentIntentId}`);
+    summaryEl.innerHTML = `
+      <div>
+        <span class="summary-label">Nominal</span>
+        <strong>${money(detail.amount)}</strong>
+      </div>
+      <div>
+        <span class="summary-label">Pengirim</span>
+        <strong>${escapeHTML(detail.sender_name || "-")}</strong>
+      </div>
+      <div class="summary-message">
+        <span class="summary-label">Pesan</span>
+        <p>${escapeHTML(detail.message || "-")}</p>
+      </div>
+    `;
+    if (detail.payment_status === "success") {
+      payButton.disabled = true;
+      resultEl.innerHTML = publicNotice(
+        "success",
+        "Pembayaran sudah berhasil",
+        "Terima kasih, donasimu sudah diproses untuk streamer.",
+      );
+    }
+    if (detail.payment_status === "rejected") {
+      payButton.disabled = true;
+      resultEl.innerHTML = publicNotice(
+        "danger",
+        "Donasi gagal diproses",
+        "Pesan terindikasi melanggar kebijakan sehingga pembayaran tidak dilanjutkan.",
+      );
+    }
+  } catch (error) {
+    payButton.disabled = true;
+    resultEl.innerHTML = publicNotice("danger", "Checkout tidak ditemukan", error.message);
+  }
+
+  payButton.addEventListener("click", async () => {
+    payButton.disabled = true;
+    payButton.textContent = "Memproses...";
+    resultEl.innerHTML = publicNotice("info", "Memproses pembayaran", "Mohon tunggu sebentar.");
+    try {
+      const data = await api(`/api/checkout/${paymentIntentId}/pay`, { method: "POST" });
+      if (data.payment_status === "success") {
+        resultEl.innerHTML = publicNotice(
+          "success",
+          "Pembayaran berhasil",
+          "Terima kasih, donasimu sudah diproses untuk streamer.",
+        );
+      } else {
+        resultEl.innerHTML = publicNotice(
+          "danger",
+          "Donasi gagal diproses",
+          data.message || "Pesan terindikasi melanggar kebijakan sehingga pembayaran tidak dilanjutkan.",
+        );
+      }
+    } catch (error) {
+      payButton.disabled = false;
+      resultEl.innerHTML = publicNotice("danger", "Pembayaran belum berhasil", error.message);
+    } finally {
+      payButton.textContent = "Bayar Sandbox";
+    }
   });
 }
 
