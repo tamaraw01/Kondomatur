@@ -62,6 +62,57 @@ def apply_example(example_name: str) -> None:
 
 
 st.set_page_config(page_title="Kondomatur - Donor Form", page_icon="KT", layout="centered")
+theme_mode = st.sidebar.radio("Tema tampilan", ["Dark", "Light"], horizontal=True)
+palette = (
+    {
+        "bg": "#06163f",
+        "surface": "#071f56",
+        "surface_2": "#0a2b70",
+        "text": "#f8fbff",
+        "muted": "#a7c1e8",
+        "line": "rgba(194, 223, 255, 0.20)",
+        "cyan": "#00d9ff",
+        "shadow": "rgba(0, 8, 30, 0.36)",
+    }
+    if theme_mode == "Dark"
+    else {
+        "bg": "#eef6ff",
+        "surface": "#ffffff",
+        "surface_2": "#edf5ff",
+        "text": "#06163f",
+        "muted": "#536c98",
+        "line": "rgba(6, 22, 63, 0.14)",
+        "cyan": "#0074ff",
+        "shadow": "rgba(8, 49, 120, 0.15)",
+    }
+)
+st.markdown(
+    f"""
+    <style>
+    .stApp {{
+        background:
+            linear-gradient(90deg, {palette["cyan"]} 0 6px, transparent 6px),
+            linear-gradient(135deg, {palette["bg"]}, {palette["surface_2"]});
+        color: {palette["text"]};
+    }}
+    .block-container {{
+        padding-top: 2rem;
+    }}
+    [data-testid="stForm"], div[data-testid="stAlert"] {{
+        border-radius: 8px;
+    }}
+    h1, h2, h3, p, label, [data-testid="stMarkdownContainer"] {{
+        color: {palette["text"]};
+    }}
+    .stButton > button, [data-testid="stFormSubmitButton"] button {{
+        border-radius: 8px;
+        border: 1px solid {palette["line"]};
+        box-shadow: 0 14px 34px {palette["shadow"]};
+    }}
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 st.title("Kondomatur")
 st.caption("Simulasi form donasi dan checkout sandbox untuk demo moderasi pesan live streaming.")
 

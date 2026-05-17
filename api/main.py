@@ -143,7 +143,7 @@ def _page(title: str, body: str) -> HTMLResponse:
             .public-notice.success strong {{ color: #14532d; }}
             .public-notice.danger {{ border-color: #fecaca; background: #fff1f2; color: #9f1239; }}
             .public-notice.danger strong {{ color: #881337; }}
-            .segmented-mode {{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border: 1px solid #d9e0ea; border-radius: 10px; background: #f8fafc; }}
+            .segmented-mode {{ display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 6px; border: 1px solid #d9e0ea; border-radius: 8px; background: #f8fafc; }}
             .mode-button {{ border-color: transparent; background: transparent; color: #5f6b7a; text-transform: uppercase; }}
             .mode-button.is-active {{ border-color: #4b2df7; background: #4b2df7; color: #fff; box-shadow: 0 10px 24px rgba(75,45,247,.22); }}
             .overlay-card {{ border: 1px solid #d7dde8; border-radius: 8px; padding: 28px; background: #fff; box-shadow: 0 12px 30px rgba(23, 37, 84, .12); }}

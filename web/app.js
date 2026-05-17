@@ -1,5 +1,21 @@
 const app = document.querySelector("#app");
 const DEFAULT_STREAMER_ID = "streamer_001";
+const THEME_KEY = "kondomatur_theme";
+
+function getTheme() {
+  return localStorage.getItem(THEME_KEY) || "dark";
+}
+
+function applyTheme(theme = getTheme()) {
+  document.documentElement.dataset.theme = theme;
+}
+
+function setTheme(theme) {
+  localStorage.setItem(THEME_KEY, theme);
+  applyTheme(theme);
+}
+
+applyTheme();
 
 function apiBaseUrl() {
   return (localStorage.getItem("kondomatur_api_url") || "http://localhost:8000").replace(/\/$/, "");
@@ -82,11 +98,17 @@ function layout(title, content, variant = "default") {
         <span class="brand-mark">KT</span>
         <span>Kondomatur</span>
       </a>
-      <nav>
-        <a href="/streamer">Panel</a>
-        <a href="/donate/${DEFAULT_STREAMER_ID}">Donasi</a>
-        <a href="/overlay/${DEFAULT_STREAMER_ID}">Overlay</a>
-      </nav>
+      <div class="topbar-actions">
+        <nav>
+          <a href="/streamer">Panel</a>
+          <a href="/donate/${DEFAULT_STREAMER_ID}">Donasi</a>
+          <a href="/overlay/${DEFAULT_STREAMER_ID}">Overlay</a>
+        </nav>
+        <button class="theme-toggle" id="themeToggle" type="button" aria-label="Ganti tema">
+          <span class="theme-toggle-icon"></span>
+          <span id="themeToggleText">${getTheme() === "dark" ? "Dark" : "Light"}</span>
+        </button>
+      </div>
     </header>
     ${intro}
     ${content}
@@ -94,6 +116,11 @@ function layout(title, content, variant = "default") {
   document.querySelector("#apiUrl").addEventListener("change", (event) => {
     setApiBaseUrl(event.target.value);
     window.location.reload();
+  });
+  document.querySelector("#themeToggle").addEventListener("click", () => {
+    const nextTheme = getTheme() === "dark" ? "light" : "dark";
+    setTheme(nextTheme);
+    document.querySelector("#themeToggleText").textContent = nextTheme === "dark" ? "Dark" : "Light";
   });
 }
 
@@ -117,15 +144,18 @@ async function renderStreamer() {
     <section class="streamer-dashboard">
       <div class="kpi-grid">
         <article class="kpi-card kpi-revenue">
+          <div class="pack-stripe"></div>
           <span>Total pendapatan</span>
           <strong>${money(paid).replace("IDR", "Rp ")}</strong>
         </article>
         <article class="kpi-card">
+          <div class="pack-stripe hot"></div>
           <span>Donasi terfilter</span>
           <strong class="accent-hot">${filtered}</strong>
           <small>Event</small>
         </article>
         <article class="kpi-card mode-card">
+          <div class="pack-stripe violet"></div>
           <span>Mode proteksi</span>
           <div class="segmented-mode" role="group" aria-label="Mode proteksi">
             <button class="mode-button ${currentMode === "sensor" ? "is-active" : ""}" data-mode="sensor" type="button">
@@ -160,6 +190,7 @@ async function renderStreamer() {
 
         <section class="glass-panel status-console">
           <span class="section-label">System status</span>
+          <h2>Payment gateway aktif</h2>
           <div class="status-list">
             <span class="status-chip"><i></i>AI Moderation aktif</span>
             <span class="status-chip"><i></i>Payment Sandbox aktif</span>
@@ -216,8 +247,16 @@ async function renderStreamer() {
     `,
     "console",
   );
-  document.querySelector("#copyDonate").addEventListener("click", () => copyText(donateLink));
-  document.querySelector("#copyOverlay").addEventListener("click", () => copyText(overlayLink));
+  document.querySelector("#copyDonate").addEventListener("click", (event) => {
+    copyText(donateLink);
+    event.currentTarget.textContent = "Copied";
+    setTimeout(() => { event.currentTarget.textContent = "Copy"; }, 1200);
+  });
+  document.querySelector("#copyOverlay").addEventListener("click", (event) => {
+    copyText(overlayLink);
+    event.currentTarget.textContent = "Copied";
+    setTimeout(() => { event.currentTarget.textContent = "Copy"; }, 1200);
+  });
   document.querySelectorAll(".mode-button").forEach((button) => {
     button.addEventListener("click", async () => {
       const mode = button.dataset.mode;

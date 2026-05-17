@@ -16,6 +16,7 @@ Sistem ini tidak melakukan integrasi pembayaran nyata dan tidak memakai data pri
 - Baseline ML memakai TF-IDF char/word n-gram dan Logistic Regression.
 - Fallback rule detector jika model belum dilatih.
 - FastAPI backend, SQLite lokal, PostgreSQL/Supabase production, Streamlit lokal, dan frontend statis Vercel.
+- UI demo memakai tema premium dengan mode `Dark`/`Light`, palet biru-cyan, dan aksen warna varian untuk memberi rasa platform publik yang matang.
 
 ## Arsitektur Singkat
 

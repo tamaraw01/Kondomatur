@@ -22,45 +22,79 @@ def api_post(path: str, payload: dict):
 
 
 st.set_page_config(page_title="Kondomatur - Panel Streamer", page_icon="KT", layout="wide")
+theme_mode = st.sidebar.radio("Tema tampilan", ["Dark", "Light"], horizontal=True)
+if theme_mode == "Dark":
+    palette = {
+        "bg": "#06163f",
+        "surface": "#071f56",
+        "surface_2": "#0a2b70",
+        "text": "#f8fbff",
+        "muted": "#a7c1e8",
+        "line": "rgba(194, 223, 255, 0.20)",
+        "cyan": "#00d9ff",
+        "mint": "#00e7a6",
+        "shadow": "rgba(0, 8, 30, 0.36)",
+    }
+else:
+    palette = {
+        "bg": "#eef6ff",
+        "surface": "#ffffff",
+        "surface_2": "#edf5ff",
+        "text": "#06163f",
+        "muted": "#536c98",
+        "line": "rgba(6, 22, 63, 0.14)",
+        "cyan": "#0074ff",
+        "mint": "#00a878",
+        "shadow": "rgba(8, 49, 120, 0.15)",
+    }
+
 st.markdown(
-    """
+    f"""
     <style>
-    .stApp { background: #070807; color: #f7f7fb; }
+    .stApp {{
+        background:
+            linear-gradient(90deg, {palette["cyan"]} 0 6px, transparent 6px),
+            linear-gradient(135deg, {palette["bg"]}, {palette["surface_2"]});
+        color: {palette["text"]};
+    }}
     .block-container { padding-top: 2rem; max-width: 1180px; }
-    [data-testid="stMetric"] {
-        background: #171817;
-        border: 1px solid #242629;
-        border-radius: 22px;
+    [data-testid="stMetric"] {{
+        background: {palette["surface"]};
+        border: 1px solid {palette["line"]};
+        border-radius: 8px;
         padding: 16px;
-        box-shadow: 0 20px 55px rgba(0,0,0,.28);
-    }
-    div[data-testid="stAlert"] {
-        border-radius: 16px;
-    }
-    .kd-card {
-        border: 1px solid #242629;
-        border-radius: 22px;
+        box-shadow: 0 20px 55px {palette["shadow"]};
+    }}
+    div[data-testid="stAlert"] {{
+        border-radius: 8px;
+    }}
+    .kd-card {{
+        border: 1px solid {palette["line"]};
+        border-radius: 8px;
         padding: 20px;
-        background: #171817;
-        box-shadow: 0 20px 55px rgba(0,0,0,.28);
-    }
-    .premium-title {
-        color: #8e8e97;
+        background: {palette["surface"]};
+        box-shadow: 0 20px 55px {palette["shadow"]};
+    }}
+    .premium-title {{
+        color: {palette["cyan"]};
         font-size: 12px;
         font-weight: 900;
         text-transform: uppercase;
-    }
-    .status-chip {
+    }}
+    .status-chip {{
         display: inline-block;
         margin: 0 8px 8px 0;
         padding: 9px 12px;
-        border: 1px solid #28302e;
+        border: 1px solid {palette["line"]};
         border-radius: 999px;
-        background: #101514;
-        color: #d9fff5;
+        background: {palette["surface_2"]};
+        color: {palette["text"]};
         font-weight: 800;
         font-size: 13px;
-    }
+    }}
+    h1, h2, h3, p, label, [data-testid="stMarkdownContainer"] {{
+        color: {palette["text"]};
+    }}
     </style>
     """,
     unsafe_allow_html=True,
