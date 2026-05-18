@@ -451,6 +451,21 @@ def _pick(items: list[str], index: int, step: int = 1) -> str:
     return items[(index * step) % len(items)]
 
 
+def normalized_message_key(message: object) -> str:
+    return " ".join(str(message or "").strip().lower().split())
+
+
+def row_message_key(row: dict[str, object]) -> str:
+    return normalized_message_key(row.get("message_raw"))
+
+
+def row_text_key(row: dict[str, object]) -> tuple[str, str]:
+    return (
+        str(row.get("label_multiclass") or ""),
+        normalized_message_key(row.get("text_for_model")),
+    )
+
+
 def fullwidth_text(text: str) -> str:
     output = []
     for char in text:
@@ -663,35 +678,43 @@ def generate_rows_for_label(
     start_index: int = 0,
     prefix: str = "sample",
     existing_keys: set[tuple[str, str, str]] | None = None,
+    existing_messages: set[str] | None = None,
+    existing_texts: set[tuple[str, str]] | None = None,
 ) -> list[dict[str, object]]:
     rows: list[dict[str, object]] = []
     seen: set[tuple[str, str, str]] = set(existing_keys or set())
+    seen_messages: set[str] = set(existing_messages or set())
+    seen_texts: set[tuple[str, str]] = set(existing_texts or set())
     index = start_index
     while len(rows) < count:
         sender = sender_for_label(label, index)
         message = message_for_label(label, index)
         key = (label, sender, message)
-        if key in seen and prefix == "balanced":
+        message_key = normalized_message_key(message)
+        if (key in seen or message_key in seen_messages) and prefix == "balanced":
             message = f"{message} batch {index}"
             key = (label, sender, message)
+            message_key = normalized_message_key(message)
         index += 1
-        if key in seen:
+        row_number = len(rows)
+        row = {
+            "donation_id": f"{prefix}_{label}_{row_number:05d}",
+            "sender_name_raw": sender,
+            "sender_email_raw": f"user{row_number:04d}@example.com",
+            "amount": 10000 + (row_number % 25) * 2500,
+            "payment_method": _pick(["QRIS", "E-Wallet", "Virtual Account", "Transfer"], row_number),
+            "platform": _pick(["Saweria", "Trakteer", "Kondomatur", "DemoPay"], row_number, 3),
+            "message_raw": message,
+            "label_multiclass": label,
+            "text_for_model": build_text_for_model(sender, message),
+        }
+        text_key = row_text_key(row)
+        if key in seen or message_key in seen_messages or text_key in seen_texts:
             continue
         seen.add(key)
-        row_number = len(rows)
-        rows.append(
-            {
-                "donation_id": f"{prefix}_{label}_{row_number:05d}",
-                "sender_name_raw": sender,
-                "sender_email_raw": f"user{row_number:04d}@example.com",
-                "amount": 10000 + (row_number % 25) * 2500,
-                "payment_method": _pick(["QRIS", "E-Wallet", "Virtual Account", "Transfer"], row_number),
-                "platform": _pick(["Saweria", "Trakteer", "Kondomatur", "DemoPay"], row_number, 3),
-                "message_raw": message,
-                "label_multiclass": label,
-                "text_for_model": build_text_for_model(sender, message),
-            }
-        )
+        seen_messages.add(message_key)
+        seen_texts.add(text_key)
+        rows.append(row)
     return rows
 
 
@@ -730,6 +753,8 @@ def load_real_youtube_rows() -> list[dict[str, object]]:
         raise RuntimeError(f"{REAL_YOUTUBE_CHAT_PATH.name} missing columns: {', '.join(sorted(missing))}")
 
     rows: list[dict[str, object]] = []
+    seen_messages: set[str] = set()
+    seen_texts: set[tuple[str, str]] = set()
     for index, row in df.reset_index(drop=True).iterrows():
         cleaned_message = str(row.get("cleaned_message") or "").strip()
         if not cleaned_message or cleaned_message.lower() == "nan":
@@ -738,20 +763,47 @@ def load_real_youtube_rows() -> list[dict[str, object]]:
         author_name = str(row.get("author_name") or f"youtube_viewer_{index:04d}").strip() or f"youtube_viewer_{index:04d}"
         sender = f"{author_name}_{index:05d}"
         for variant_index, message in enumerate([cleaned_message, real_youtube_variant(cleaned_message, label, index)]):
-            rows.append(
-                {
-                    "donation_id": f"real_youtube_{label}_{index:05d}_{variant_index}",
-                    "sender_name_raw": sender if variant_index == 0 else f"{sender}_chat",
-                    "sender_email_raw": f"youtube{index:05d}@example.com",
-                    "amount": 10000 + (index % 30) * 2000,
-                    "payment_method": "QRIS",
-                    "platform": "YouTube Live",
-                    "message_raw": message,
-                    "label_multiclass": label,
-                    "text_for_model": build_text_for_model(sender, message),
-                }
-            )
+            row_data = {
+                "donation_id": f"real_youtube_{label}_{index:05d}_{variant_index}",
+                "sender_name_raw": sender if variant_index == 0 else f"{sender}_chat",
+                "sender_email_raw": f"youtube{index:05d}@example.com",
+                "amount": 10000 + (index % 30) * 2000,
+                "payment_method": "QRIS",
+                "platform": "YouTube Live",
+                "message_raw": message,
+                "label_multiclass": label,
+                "text_for_model": build_text_for_model(sender, message),
+            }
+            message_key = row_message_key(row_data)
+            text_key = row_text_key(row_data)
+            if message_key in seen_messages or text_key in seen_texts:
+                continue
+            seen_messages.add(message_key)
+            seen_texts.add(text_key)
+            rows.append(row_data)
     return rows
+
+
+def dedupe_rows(rows: list[dict[str, object]]) -> list[dict[str, object]]:
+    unique_rows: list[dict[str, object]] = []
+    seen_messages: set[str] = set()
+    seen_texts: set[tuple[str, str]] = set()
+    seen_full: set[tuple[str, str, str]] = set()
+    for row in rows:
+        full_key = (
+            str(row.get("label_multiclass") or ""),
+            str(row.get("sender_name_raw") or ""),
+            str(row.get("message_raw") or ""),
+        )
+        message_key = row_message_key(row)
+        text_key = row_text_key(row)
+        if full_key in seen_full or message_key in seen_messages or text_key in seen_texts:
+            continue
+        seen_full.add(full_key)
+        seen_messages.add(message_key)
+        seen_texts.add(text_key)
+        unique_rows.append(row)
+    return unique_rows
 
 
 def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
@@ -767,9 +819,12 @@ def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
     }
     for label in ["benign", "spam_non_judol", "suspicious_judol", "explicit_judol"]:
         rows_by_label[label].extend(generate_rows_for_label(label, SAMPLES_PER_CLASS))
+        rows_by_label[label] = dedupe_rows(rows_by_label[label])
 
     for row in load_real_youtube_rows():
         rows_by_label[str(row["label_multiclass"])].append(row)
+    for label in rows_by_label:
+        rows_by_label[label] = dedupe_rows(rows_by_label[label])
 
     target_count = max(len(label_rows) for label_rows in rows_by_label.values())
     for label, label_rows in rows_by_label.items():
@@ -779,6 +834,8 @@ def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
                 (str(row["label_multiclass"]), str(row["sender_name_raw"]), str(row["message_raw"]))
                 for row in label_rows
             }
+            existing_messages = {row_message_key(row) for row in label_rows}
+            existing_texts = {row_text_key(row) for row in label_rows}
             label_rows.extend(
                 generate_rows_for_label(
                     label,
@@ -786,8 +843,11 @@ def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
                     start_index=100000 + len(label_rows),
                     prefix="balanced",
                     existing_keys=existing_keys,
+                    existing_messages=existing_messages,
+                    existing_texts=existing_texts,
                 )
             )
+            rows_by_label[label] = dedupe_rows(label_rows)
 
     rows: list[dict[str, object]] = []
     for label in ["benign", "spam_non_judol", "suspicious_judol", "explicit_judol"]:
@@ -797,6 +857,12 @@ def generate_sample_dataset(force: bool = False) -> pd.DataFrame:
     duplicate_count = int(df.duplicated(subset=["sender_name_raw", "message_raw", "label_multiclass"]).sum())
     if duplicate_count:
         raise RuntimeError(f"Synthetic dataset contains {duplicate_count} duplicate sender/message/label rows")
+    duplicate_message_count = int(df.duplicated(subset=["message_raw"]).sum())
+    if duplicate_message_count:
+        raise RuntimeError(f"Synthetic dataset contains {duplicate_message_count} duplicate messages")
+    duplicate_text_count = int(df.duplicated(subset=["text_for_model", "label_multiclass"]).sum())
+    if duplicate_text_count:
+        raise RuntimeError(f"Synthetic dataset contains {duplicate_text_count} duplicate model texts")
     df.to_csv(SAMPLE_DATA_PATH, index=False)
     return df
 
