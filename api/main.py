@@ -123,13 +123,10 @@ def _page(title: str, body: str, chrome: bool = True) -> HTMLResponse:
           <meta charset="utf-8" />
           <meta name="viewport" content="width=device-width, initial-scale=1" />
           <title>{title}</title>
-          <link rel="preconnect" href="https://fonts.googleapis.com" />
-          <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-          <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet" />
           <style>
             :root {{
               color-scheme: dark;
-              font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+              font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
               --bg: #06163f;
               --bg-2: #092a72;
               --surface: #071f56;
@@ -287,185 +284,8 @@ def _page(title: str, body: str, chrome: bool = True) -> HTMLResponse:
             .overlay-card {{ width: min(760px, calc(100% - 32px)); margin: 48px auto; display: grid; gap: 8px; border: 1px solid var(--line); border-radius: 8px; padding: 32px; background: var(--surface); box-shadow: 0 24px 70px var(--shadow); }}
             .amount {{ color: var(--cyan); font-size: 32px; font-weight: 950; }}
             .message {{ color: var(--muted); font-size: 22px; }}
-            :root {{
-              --bg: #0b1018;
-              --bg-2: #172033;
-              --surface: #111827;
-              --surface-2: #1d2939;
-              --surface-3: #2b3a4e;
-              --line: rgba(203, 213, 225, 0.16);
-              --line-strong: rgba(255, 255, 255, 0.32);
-              --text: #f8fbff;
-              --muted: #aebacc;
-              --muted-2: #8491a3;
-              --brand-blue: #2563eb;
-              --brand-blue-2: #38bdf8;
-              --cyan: #22d3ee;
-              --mint: #34d399;
-              --violet: #8b5cf6;
-              --magenta: #fb7185;
-              --orange: #f59e0b;
-              --lime: #a3e635;
-              --shadow: rgba(0, 0, 0, 0.36);
-              --glow: rgba(34, 211, 238, 0.2);
-              --radius: 8px;
-            }}
-            :root[data-theme="light"] {{
-              --bg: #f5f7fb;
-              --bg-2: #e7edf6;
-              --surface: #ffffff;
-              --surface-2: #eef3f9;
-              --surface-3: #dce7f3;
-              --line: rgba(15, 23, 42, 0.12);
-              --line-strong: rgba(15, 23, 42, 0.2);
-              --text: #111827;
-              --muted: #5d6b7d;
-              --muted-2: #758397;
-              --brand-blue: #2563eb;
-              --brand-blue-2: #0ea5e9;
-              --cyan: #0891b2;
-              --mint: #059669;
-              --violet: #7c3aed;
-              --magenta: #e11d48;
-              --orange: #d97706;
-              --lime: #65a30d;
-              --shadow: rgba(15, 23, 42, 0.12);
-              --glow: rgba(14, 165, 233, 0.16);
-            }}
-            body {{
-              background:
-                radial-gradient(circle at 0 0, color-mix(in srgb, var(--cyan) 26%, transparent), transparent 30rem),
-                radial-gradient(circle at 100% 8%, color-mix(in srgb, var(--orange) 16%, transparent), transparent 24rem),
-                linear-gradient(135deg, var(--bg), var(--bg-2));
-            }}
-            body::before {{
-              background:
-                linear-gradient(color-mix(in srgb, var(--line) 46%, transparent) 1px, transparent 1px),
-                linear-gradient(90deg, color-mix(in srgb, var(--line) 46%, transparent) 1px, transparent 1px);
-              background-size: 56px 56px;
-              mask-image: linear-gradient(180deg, rgba(0, 0, 0, 0.5), transparent 74%);
-              opacity: 0.38;
-            }}
-            main {{ width: min(1220px, calc(100% - 32px)); padding-top: 18px; }}
-            .topbar {{
-              position: sticky;
-              top: 12px;
-              z-index: 10;
-              width: min(1220px, calc(100% - 32px));
-              margin-bottom: 20px;
-              border: 1px solid var(--line);
-              border-radius: var(--radius);
-              padding: 10px;
-              background: color-mix(in srgb, var(--surface) 78%, transparent);
-              box-shadow: 0 18px 50px var(--shadow);
-              backdrop-filter: blur(18px);
-            }}
-            .brand-mark {{
-              width: 40px;
-              height: 40px;
-              border-radius: var(--radius);
-              background: linear-gradient(135deg, var(--cyan), var(--brand-blue) 54%, var(--violet));
-              font-size: 12px;
-              letter-spacing: 0;
-            }}
-            nav {{
-              border-radius: var(--radius);
-              background: color-mix(in srgb, var(--bg) 38%, transparent);
-              box-shadow: none;
-            }}
-            nav a {{
-              min-width: 82px;
-              padding: 10px 12px;
-              border-radius: 6px;
-            }}
-            .theme-toggle {{
-              border-radius: var(--radius);
-              background: color-mix(in srgb, var(--bg) 38%, transparent);
-              box-shadow: none;
-            }}
-            .console-intro {{
-              grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
-              margin-bottom: 26px;
-            }}
-            .console-intro h1 {{ font-size: clamp(34px, 4vw, 52px); letter-spacing: 0; }}
-            .panel, .api-card, .glass-panel, .kpi-card, .activity-panel {{
-              border-radius: var(--radius);
-              background: linear-gradient(135deg, color-mix(in srgb, var(--surface) 94%, white 6%), var(--surface));
-              box-shadow: 0 22px 58px var(--shadow);
-            }}
-            .panel, .api-card, .glass-panel {{ padding: 22px; }}
-            input, textarea, select {{
-              border-radius: var(--radius);
-              background: color-mix(in srgb, var(--surface-2) 88%, #000 12%);
-              transition: border-color 160ms ease, box-shadow 160ms ease, background 160ms ease;
-            }}
-            button, .button {{
-              border-radius: var(--radius);
-              transition: transform 160ms ease, border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
-            }}
-            button:hover, .button:hover {{ transform: translateY(-1px); }}
-            .streamer-dashboard {{ gap: 22px; }}
-            .kpi-grid, .premium-grid {{ gap: 16px; }}
-            .kpi-card {{
-              min-height: 132px;
-              padding: 22px;
-            }}
-            .kpi-card strong {{ font-size: clamp(28px, 3.4vw, 38px); letter-spacing: 0; }}
-            .segmented-mode, .mini-metrics div, .metric, .checkout-summary, .public-notice, .overlay-card {{ border-radius: var(--radius); }}
-            .mini-metrics, .metrics {{ gap: 8px; }}
-            .activity-header {{
-              min-height: 76px;
-              padding: 22px 24px;
-            }}
-            .activity-title h2 {{ text-transform: none; }}
-            table {{ min-width: 820px; }}
-            th, td {{ padding: 14px 16px; }}
-            th {{ letter-spacing: 0; }}
-            tbody tr {{ transition: background 150ms ease; }}
-            tbody tr:hover {{ background: color-mix(in srgb, var(--surface-3) 22%, transparent); }}
-            .badge {{ white-space: nowrap; }}
-            .badge.tone-good {{
-              border-color: color-mix(in srgb, var(--mint) 42%, var(--line));
-              background: color-mix(in srgb, var(--mint) 13%, var(--surface));
-            }}
-            .badge.tone-warn {{
-              border-color: color-mix(in srgb, var(--orange) 44%, var(--line));
-              background: color-mix(in srgb, var(--orange) 13%, var(--surface));
-            }}
-            .badge.tone-danger {{
-              border-color: color-mix(in srgb, var(--magenta) 48%, var(--line));
-              background: color-mix(in srgb, var(--magenta) 12%, var(--surface));
-            }}
-            .badge.tone-neutral {{
-              border-color: var(--line);
-              background: color-mix(in srgb, var(--surface-2) 82%, transparent);
-            }}
             @media (max-width: 980px) {{ .console-intro, .kpi-grid, .premium-grid, .mini-metrics, .metrics {{ grid-template-columns: 1fr; }} }}
-            @media (max-width: 980px) {{
-              .topbar {{ align-items: stretch; }}
-              .topbar-actions {{ flex: 1; justify-content: flex-end; }}
-              .kpi-card {{ min-height: 116px; }}
-            }}
-            @media (max-width: 720px) {{
-              main, .topbar {{ width: min(100% - 20px, 1220px); }}
-              .topbar, .premium-link-row, .link-row, .activity-header {{ display: grid; grid-template-columns: 1fr; }}
-              .topbar {{ position: static; gap: 12px; }}
-              .topbar-actions {{ display: grid; grid-template-columns: 1fr auto; gap: 8px; }}
-              nav {{ display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border-radius: var(--radius); }}
-              nav a {{ min-width: 0; padding-inline: 8px; }}
-              .theme-toggle {{ width: auto; min-width: 44px; padding-inline: 11px; }}
-              #themeToggleText {{ display: none; }}
-              .activity-header {{ align-items: start; padding: 18px; }}
-              .mini-metrics, .metrics {{ grid-template-columns: repeat(2, minmax(0, 1fr)); }}
-              .version-mark {{ position: static; display: block; padding: 12px 18px 16px; }}
-            }}
-            @media (max-width: 440px) {{
-              .topbar-actions {{ grid-template-columns: 1fr; }}
-              .theme-toggle {{ width: 100%; }}
-              #themeToggleText {{ display: inline; }}
-              .brand {{ min-width: 0; }}
-              .brand span:last-child {{ overflow: hidden; text-overflow: ellipsis; }}
-            }}
+            @media (max-width: 720px) {{ main, .topbar {{ width: min(100% - 20px, 1184px); }} .topbar, .topbar-actions, nav, .premium-link-row, .link-row, .activity-header {{ display: grid; grid-template-columns: 1fr; }} nav {{ border-radius: 8px; }} .theme-toggle {{ width: 100%; }} .activity-header {{ align-items: start; padding: 20px; }} }}
           </style>
           <script>
             const storedTheme = localStorage.getItem("kondomatur_theme") || "dark";
@@ -639,13 +459,6 @@ def streamer_panel() -> HTMLResponse:
               .replaceAll('"', "&quot;")
               .replaceAll("'", "&#039;");
           }}
-          function badgeTone(value) {{
-            const key = String(value ?? "").toLowerCase();
-            if (["success", "allow", "visible", "benign"].includes(key)) return "tone-good";
-            if (["mask", "review", "pending", "suspicious_judol"].includes(key)) return "tone-warn";
-            if (["block", "rejected", "hidden", "explicit_judol"].includes(key)) return "tone-danger";
-            return "tone-neutral";
-          }}
           document.querySelectorAll('.mode-button').forEach((button) => {{
             button.addEventListener('click', async () => {{
               const mode = button.dataset.mode;
@@ -691,10 +504,10 @@ def streamer_panel() -> HTMLResponse:
               <tr>
                 <td>${{escapeHtml(r.display_sender_name || r.sender_name_raw || '-')}}</td>
                 <td>${{fmtAmount(r.amount)}}</td>
-                <td><span class="badge ${{badgeTone(r.label_multiclass)}}">${{escapeHtml(r.label_multiclass)}}</span></td>
-                <td><span class="badge ${{badgeTone(r.action_label)}}">${{escapeHtml(r.action_label)}}</span></td>
-                <td><span class="badge ${{badgeTone(r.payment_status)}}">${{escapeHtml(r.payment_status)}}</span></td>
-                <td><span class="badge ${{badgeTone(Number(r.overlay_displayed) ? 'visible' : 'hidden')}}">${{Number(r.overlay_displayed) ? 'visible' : 'hidden'}}</span></td>
+                <td><span class="badge">${{escapeHtml(r.label_multiclass)}}</span></td>
+                <td><span class="badge">${{escapeHtml(r.action_label)}}</span></td>
+                <td><span class="badge">${{escapeHtml(r.payment_status)}}</span></td>
+                <td><span class="badge">${{Number(r.overlay_displayed) ? 'visible' : 'hidden'}}</span></td>
               </tr>`).join('') : `
                 <tr>
                   <td class="empty-cell" colspan="6">

@@ -38,14 +38,6 @@ function escapeHTML(value) {
     .replaceAll("'", "&#039;");
 }
 
-function badgeTone(value) {
-  const key = String(value ?? "").toLowerCase();
-  if (["success", "allow", "visible", "benign"].includes(key)) return "tone-good";
-  if (["mask", "review", "pending", "suspicious_judol"].includes(key)) return "tone-warn";
-  if (["block", "rejected", "hidden", "explicit_judol"].includes(key)) return "tone-danger";
-  return "tone-neutral";
-}
-
 function publicNotice(kind, title, message) {
   return `
     <div class="public-notice ${kind}">
@@ -230,10 +222,10 @@ async function renderStreamer() {
                   <tr>
                     <td>${escapeHTML(row.display_sender_name || row.sender_name_raw || "-")}</td>
                     <td>${money(row.amount)}</td>
-                    <td><span class="badge ${badgeTone(row.label_multiclass)}">${escapeHTML(row.label_multiclass)}</span></td>
-                    <td><span class="badge ${badgeTone(row.action_label)}">${escapeHTML(row.action_label)}</span></td>
-                    <td><span class="badge ${badgeTone(row.payment_status)}">${escapeHTML(row.payment_status)}</span></td>
-                    <td><span class="badge ${badgeTone(Number(row.overlay_displayed) ? "visible" : "hidden")}">${Number(row.overlay_displayed) ? "visible" : "hidden"}</span></td>
+                    <td><span class="badge">${escapeHTML(row.label_multiclass)}</span></td>
+                    <td><span class="badge">${escapeHTML(row.action_label)}</span></td>
+                    <td><span class="badge">${escapeHTML(row.payment_status)}</span></td>
+                    <td><span class="badge">${Number(row.overlay_displayed) ? "visible" : "hidden"}</span></td>
                   </tr>
                 `).join("") : `
                   <tr>

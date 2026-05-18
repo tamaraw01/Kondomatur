@@ -65,49 +65,218 @@ st.set_page_config(page_title="Kondomatur - Donor Form", page_icon="KT", layout=
 theme_mode = st.sidebar.radio("Tema tampilan", ["Dark", "Light"], horizontal=True)
 palette = (
     {
-        "bg": "#06163f",
-        "surface": "#071f56",
-        "surface_2": "#0a2b70",
+        "bg": "#0b1018",
+        "surface": "#111827",
+        "surface_2": "#1d2939",
+        "surface_3": "#253247",
         "text": "#f8fbff",
-        "muted": "#a7c1e8",
-        "line": "rgba(194, 223, 255, 0.20)",
-        "cyan": "#00d9ff",
-        "shadow": "rgba(0, 8, 30, 0.36)",
+        "muted": "#aebacc",
+        "line": "rgba(203, 213, 225, 0.16)",
+        "cyan": "#22d3ee",
+        "mint": "#34d399",
+        "orange": "#f59e0b",
+        "shadow": "rgba(0, 0, 0, 0.36)",
     }
     if theme_mode == "Dark"
     else {
-        "bg": "#eef6ff",
+        "bg": "#f5f7fb",
         "surface": "#ffffff",
-        "surface_2": "#edf5ff",
-        "text": "#06163f",
-        "muted": "#536c98",
-        "line": "rgba(6, 22, 63, 0.14)",
-        "cyan": "#0074ff",
-        "shadow": "rgba(8, 49, 120, 0.15)",
+        "surface_2": "#eef3f9",
+        "surface_3": "#dce7f3",
+        "text": "#111827",
+        "muted": "#5d6b7d",
+        "line": "rgba(15, 23, 42, 0.12)",
+        "cyan": "#0891b2",
+        "mint": "#059669",
+        "orange": "#d97706",
+        "shadow": "rgba(15, 23, 42, 0.12)",
     }
 )
 st.markdown(
     f"""
     <style>
-    .stApp {{
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap');
+
+    html, body, [class*="css"] {{
+        font-family: "Plus Jakarta Sans", ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }}
+
+    html, body, #root {{
+        background: {palette["bg"]} !important;
+    }}
+
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    section.main {{
         background:
-            linear-gradient(90deg, {palette["cyan"]} 0 6px, transparent 6px),
-            linear-gradient(135deg, {palette["bg"]}, {palette["surface_2"]});
+            radial-gradient(circle at 8% 10%, color-mix(in srgb, {palette["cyan"]} 24%, transparent), transparent 30rem),
+            radial-gradient(circle at 94% 2%, color-mix(in srgb, {palette["orange"]} 14%, transparent), transparent 26rem),
+            linear-gradient(135deg, {palette["bg"]}, {palette["surface_2"]}) !important;
         color: {palette["text"]};
     }}
-    .block-container {{
-        padding-top: 2rem;
+
+    .stApp::before {{
+        content: "";
+        position: fixed;
+        inset: 0;
+        pointer-events: none;
+        background:
+            linear-gradient(color-mix(in srgb, {palette["line"]} 44%, transparent) 1px, transparent 1px),
+            linear-gradient(90deg, color-mix(in srgb, {palette["line"]} 44%, transparent) 1px, transparent 1px);
+        background-size: 54px 54px;
+        opacity: 0.28;
+        mask-image: linear-gradient(180deg, black, transparent 76%);
     }}
+
+    .stApp::after {{
+        content: "";
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        z-index: 999999;
+        pointer-events: none;
+        background: linear-gradient(135deg, {palette["bg"]}, {palette["surface"]});
+        border-top: 3px solid {palette["cyan"]};
+    }}
+
+    header,
+    .stAppHeader,
+    header[data-testid="stHeader"],
+    [data-testid="stHeader"] {{
+        height: 0;
+        min-height: 0;
+        background: transparent !important;
+        visibility: hidden;
+    }}
+
+    [data-testid="stToolbar"],
+    [data-testid="stDecoration"],
+    #MainMenu {{
+        visibility: hidden;
+    }}
+
+    .block-container {{
+        max-width: 860px;
+        padding-top: 3rem;
+        padding-bottom: 4rem;
+    }}
+
+    [data-testid="stSidebar"] {{
+        background: {palette["surface"]};
+        border-right: 1px solid {palette["line"]};
+    }}
+
+    [data-testid="stSidebar"] > div {{
+        padding-top: 3rem;
+    }}
+
+    [data-testid="stSidebar"] label,
+    [data-testid="stSidebar"] [data-testid="stMarkdownContainer"] {{
+        color: {palette["text"]};
+    }}
+
     [data-testid="stForm"], div[data-testid="stAlert"] {{
         border-radius: 8px;
     }}
+
+    [data-testid="stForm"] {{
+        border: 1px solid {palette["line"]};
+        background: linear-gradient(135deg, color-mix(in srgb, {palette["surface"]} 94%, white 6%), {palette["surface"]});
+        box-shadow: 0 24px 70px {palette["shadow"]};
+        padding: 1.25rem;
+    }}
+
     h1, h2, h3, p, label, [data-testid="stMarkdownContainer"] {{
         color: {palette["text"]};
     }}
+
+    h1 {{
+        font-weight: 900;
+        letter-spacing: 0;
+        font-size: clamp(2.4rem, 5vw, 3.5rem);
+    }}
+
+    .stCaptionContainer,
+    [data-testid="stCaptionContainer"],
+    p {{
+        color: {palette["muted"]};
+    }}
+
     .stButton > button, [data-testid="stFormSubmitButton"] button {{
         border-radius: 8px;
         border: 1px solid {palette["line"]};
+        background: color-mix(in srgb, {palette["surface"]} 88%, black 12%);
+        color: {palette["text"]};
         box-shadow: 0 14px 34px {palette["shadow"]};
+        font-weight: 800;
+        min-height: 2.75rem;
+        transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }}
+
+    .stButton > button:hover, [data-testid="stFormSubmitButton"] button:hover {{
+        border-color: {palette["cyan"]};
+        background: {palette["surface_3"]};
+        color: {palette["text"]};
+        transform: translateY(-1px);
+    }}
+
+    [data-testid="stFormSubmitButton"] button {{
+        border-color: {palette["cyan"]};
+        background: linear-gradient(135deg, {palette["cyan"]}, {palette["mint"]});
+        color: #06111f;
+        box-shadow: 0 16px 40px color-mix(in srgb, {palette["cyan"]} 22%, transparent);
+    }}
+
+    .stTextInput input,
+    .stNumberInput input,
+    .stTextArea textarea,
+    .stSelectbox [data-baseweb="select"] > div {{
+        border: 1px solid {palette["line"]};
+        border-radius: 8px;
+        background: color-mix(in srgb, {palette["surface_2"]} 88%, black 12%);
+        color: {palette["text"]};
+    }}
+
+    [data-testid="stNumberInput"] button {{
+        border-color: {palette["line"]};
+        background: {palette["surface_2"]} !important;
+        color: {palette["text"]} !important;
+    }}
+
+    .stTextInput input:focus,
+    .stNumberInput input:focus,
+    .stTextArea textarea:focus {{
+        border-color: {palette["cyan"]};
+        box-shadow: 0 0 0 3px color-mix(in srgb, {palette["cyan"]} 20%, transparent);
+    }}
+
+    [data-testid="stRadio"] label {{
+        color: {palette["text"]};
+        font-weight: 700;
+    }}
+
+    div[data-testid="stAlert"] {{
+        border: 1px solid {palette["line"]};
+        background: color-mix(in srgb, {palette["surface"]} 90%, transparent);
+    }}
+
+    pre, code {{
+        border-radius: 8px;
+    }}
+
+    @media (max-width: 640px) {{
+        .block-container {{
+            padding-inline: 1rem;
+            padding-top: 2rem;
+        }}
+
+        [data-testid="column"] {{
+            width: 100% !important;
+            flex: 1 1 100% !important;
+        }}
     }}
     </style>
     """,
