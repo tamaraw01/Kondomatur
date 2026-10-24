@@ -48,6 +48,18 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
+## Local configuration
+
+[`src/config.py`](src/config.py) loads environment variables with `python-dotenv`. For local development, you can set these variables in a `.env` file at the repository root. Keep credentials out of version control.
+
+- `DATABASE_URL` defaults to a SQLite database at `donation_shield.db` in the repository root.
+- `MODEL_PATH` defaults to `models/judol_detector.pkl`. Relative paths resolve from the repository root; absolute paths are also accepted.
+- `DEFAULT_STREAMER_ID` defaults to `streamer_001`, and `DEFAULT_FILTER_MODE` defaults to `sensor`.
+- `FRONTEND_URL` defaults to `http://localhost:8501`.
+- `CORS_ORIGINS` accepts a comma-separated list of browser origins. Its defaults cover the local Streamlit ports `8501`, `8502`, and `8503`. The configuration also adds `FRONTEND_URL` if it is not already listed.
+
+If you serve the static frontend from another origin, include that origin in `CORS_ORIGINS` or set it as `FRONTEND_URL`. An origin includes the scheme, hostname, and port, for example `http://localhost:3000`.
+
 ## Inisialisasi Database
 
 ```bash
